@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  SICODE ECOSYSTEM — MOCKUP DE REFERÊNCIA VISUAL
+  Arquivo: sicode-core-hub-modelo.html
+  ============================================================================
+  ATENÇÃO:
+  - Este arquivo é um MOCKUP. Não é código de produção.
+  - Serve como REFERÊNCIA VISUAL NORMATIVA para agentes e desenvolvedores.
+  - Define linguagem visual, composição, densidade, estados e contratos de UI.
+  - Não define regras de negócio. Estados, nomes e dados são fictícios.
+  - Agentes DEVEM reutilizar os padrões demonstrados e NÃO DEVEM criar
+    variantes visuais locais sem atualização prévia do design system.
+  - A implementação de produção deve formalizar estes padrões em tokens,
+    componentes Blade/Livewire e documentação versionada.
+  - Tailwind via CDN é usado apenas por se tratar de mockup. Em produção,
+    utilizar build com tokens versionados.
+  - Paleta derivada da família cromática do brand EDP (Marine Blue, Cobalt
+    Blue, Electric Green — ref.: brand.edp.com). Os valores hex exatos devem
+    ser validados contra o guia oficial da marca antes da formalização.
+  ============================================================================
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SICODE CORE — Hub de Aplicações (Mockup de Referência)</title>
+
+  <!-- Fonte Mulish -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CDN (apenas para mockup) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Mulish', 'system-ui', 'sans-serif'] },
+          colors: {
+            // Tokens semânticos — mapeados para CSS custom properties
+            // para permitir evolução futura (ex.: dark mode) sem refactor.
+            'bg-app':        'var(--sc-bg-app)',
+            'surface':       'var(--sc-surface)',
+            'surface-2':     'var(--sc-surface-elevated)',
+            'stroke':        'var(--sc-border)',
+            'stroke-strong': 'var(--sc-border-strong)',
+            'ink':           'var(--sc-text)',
+            'ink-2':         'var(--sc-text-secondary)',
+            'ink-3':         'var(--sc-text-muted)',
+            'primary':       'var(--sc-primary)',
+            'primary-hover': 'var(--sc-primary-hover)',
+            'primary-soft':  'var(--sc-primary-soft)',
+            'marine':        'var(--sc-marine)',
+            'marine-2':      'var(--sc-marine-soft)',
+            'accent':        'var(--sc-accent)',
+            'success':       'var(--sc-success)',
+            'success-soft':  'var(--sc-success-soft)',
+            'warning':       'var(--sc-warning)',
+            'warning-soft':  'var(--sc-warning-soft)',
+            'danger':        'var(--sc-danger)',
+            'danger-soft':   'var(--sc-danger-soft)',
+            'info':          'var(--sc-info)',
+            'info-soft':     'var(--sc-info-soft)',
+            'disabled-bg':   'var(--sc-disabled-bg)',
+            'disabled-ink':  'var(--sc-disabled-text)',
+          },
+          boxShadow: {
+            card: 'var(--sc-shadow-card)',
+            raised: 'var(--sc-shadow-raised)',
+            overlay: 'var(--sc-shadow-overlay)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <script>
+    /* Tema: evita flash incorreto antes do primeiro paint.
+       Modos suportados: system, light e dark. */
+    (function () {
+      const stored = localStorage.getItem('sicode-theme-mode') || 'system';
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const resolved = stored === 'system' ? (prefersDark ? 'dark' : 'light') : stored;
+      document.documentElement.dataset.themeMode = stored;
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.style.colorScheme = resolved;
+    })();
+  </script>
+
+  <style>
+    /* ==========================================================
+       TOKENS SEMÂNTICOS — camada única de cor do sistema.
+       Componentes nunca usam hex direto: sempre via token.
+       ========================================================== */
+    :root {
+      /* Fundos e superfícies */
+      --sc-bg-app: #F3F5FA;            /* fundo principal da aplicação */
+      --sc-surface: #FFFFFF;           /* superfícies (cards, tabelas) */
+      --sc-surface-elevated: #FFFFFF;  /* superfícies elevadas (modal, drawer) + sombra */
+
+      /* Bordas */
+      --sc-border: #DCE1EE;
+      --sc-border-strong: #B8C0D9;
+
+      /* Texto */
+      --sc-text: #1B2547;             /* texto principal */
+      --sc-text-secondary: #4E5878;   /* texto secundário */
+      --sc-text-muted: #7C86A6;       /* texto discreto / captions */
+
+      /* Marca — família EDP (validar hex contra brand.edp.com) */
+      --sc-marine: #212E5E;           /* Marine Blue — sidebar, títulos fortes */
+      --sc-marine-soft: #2C3B74;      /* hover/realce sobre marine */
+      --sc-primary: #263CC8;          /* Cobalt Blue — ação primária, links, foco */
+      --sc-primary-hover: #1D2FA0;
+      --sc-primary-soft: #E9EDFC;     /* fundo suave de seleção/realce */
+      --sc-accent: #28FF52;           /* Electric Green — acento de marca.
+                                         NUNCA como texto ou único sinal de estado
+                                         (contraste insuficiente sobre claro). */
+
+      /* Estados semânticos */
+      --sc-success: #0E7A3D;  --sc-success-soft: #E5F5EB;
+      --sc-warning: #925B00;  --sc-warning-soft: #FDF3DC;
+      --sc-danger:  #B3261E;  --sc-danger-soft:  #FBEAE9;
+      --sc-info:    #1D5FB8;  --sc-info-soft:    #E8F0FB;
+
+      /* Foco e desabilitado */
+      --sc-focus: #263CC8;
+      --sc-disabled-bg: #EDEFF6;
+      --sc-disabled-text: #9AA2BC;
+
+      /* Espaçamento semântico */
+      --sc-space-1: 0.25rem;
+      --sc-space-2: 0.5rem;
+      --sc-space-3: 0.75rem;
+      --sc-space-4: 1rem;
+      --sc-space-5: 1.25rem;
+      --sc-space-6: 1.5rem;
+      --sc-space-8: 2rem;
+      --sc-space-10: 2.5rem;
+      --sc-space-12: 3rem;
+
+      /* Forma e elevação */
+      --sc-radius-control: 0.375rem;
+      --sc-radius-container: 0.5rem;
+      --sc-radius-overlay: 0.75rem;
+      --sc-control-height-sm: 2rem;
+      --sc-control-height-md: 2.5rem;
+      --sc-control-height-lg: 3rem;
+
+      /* Tipografia semântica */
+      --sc-font-caption: 0.75rem;
+      --sc-font-body: 0.875rem;
+      --sc-font-title-3: 1rem;
+      --sc-font-title-2: 1.25rem;
+      --sc-font-title-1: 1.5rem;
+    }
+
+    /* ==========================================================
+       TEMA ESCURO — mesmos tokens semânticos, novos valores.
+       Componentes não recebem classes dark:* individualmente: o tema é
+       resolvido na camada de tokens para evitar duas UIs paralelas.
+       ========================================================== */
+    :root {
+      --sc-shadow-card: 0 1px 2px rgba(16, 24, 64, 0.06);
+      --sc-shadow-raised: 0 4px 16px rgba(16, 24, 64, 0.10);
+      --sc-shadow-overlay: 0 12px 40px rgba(16, 24, 64, 0.22);
+      --sc-overlay: rgba(7, 12, 32, 0.45);
+      --sc-skeleton-start: #E7EAF3;
+      --sc-skeleton-mid: #F1F3F9;
+    }
+
+    html[data-theme="dark"] {
+      --sc-bg-app: #0D1224;
+      --sc-surface: #141B31;
+      --sc-surface-elevated: #1A2340;
+
+      --sc-border: #2B3658;
+      --sc-border-strong: #46547C;
+
+      --sc-text: #F2F5FF;
+      --sc-text-secondary: #C4CCE3;
+      --sc-text-muted: #8F9AB9;
+
+      --sc-marine: #182343;
+      --sc-marine-soft: #24345F;
+      --sc-primary: #7C8CFF;
+      --sc-primary-hover: #98A5FF;
+      --sc-primary-soft: #222E59;
+      --sc-accent: #54FF72;
+
+      --sc-success: #59D98B;
+      --sc-success-soft: #153928;
+      --sc-warning: #F5C66B;
+      --sc-warning-soft: #433217;
+      --sc-danger: #FF837D;
+      --sc-danger-soft: #48211F;
+      --sc-info: #7EB8FF;
+      --sc-info-soft: #173454;
+
+      --sc-focus: #9CA8FF;
+      --sc-disabled-bg: #202A46;
+      --sc-disabled-text: #697694;
+
+      --sc-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.28);
+      --sc-shadow-raised: 0 8px 24px rgba(0, 0, 0, 0.34);
+      --sc-shadow-overlay: 0 18px 50px rgba(0, 0, 0, 0.52);
+      --sc-overlay: rgba(1, 4, 14, 0.68);
+      --sc-skeleton-start: #222D4A;
+      --sc-skeleton-mid: #303C5D;
+    }
+
+    html, body { background: var(--sc-bg-app); }
+    body { font-family: 'Mulish', system-ui, sans-serif; transition: background-color .18s ease, color .18s ease; }
+
+    html[data-theme="dark"] img,
+    html[data-theme="dark"] video { color-scheme: dark; }
+
+    @media (prefers-reduced-motion: reduce) {
+      body { transition: none; }
+    }
+
+    /* Foco visível global — nunca remover outline sem substituto */
+    :focus-visible {
+      outline: 2px solid var(--sc-focus);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* Marcador de item ativo da sidebar — assinatura visual do sistema:
+       barra em Electric Green acompanhada de fundo e peso (não só cor). */
+    .nav-active {
+      background: var(--sc-marine-soft);
+      font-weight: 700;
+      box-shadow: inset 3px 0 0 var(--sc-accent);
+    }
+
+    /* Densidade da tabela */
+    table.density-comfortable td, table.density-comfortable th { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    table.density-compact td, table.density-compact th { padding-top: 0.375rem; padding-bottom: 0.375rem; font-size: 0.8125rem; }
+
+    /* Skeleton loading */
+    .skeleton {
+      background: linear-gradient(90deg, var(--sc-skeleton-start) 25%, var(--sc-skeleton-mid) 50%, var(--sc-skeleton-start) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite linear;
+      border-radius: 4px;
+    }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+    /* Spinner */
+    .spinner {
+      width: 1em; height: 1em; border-radius: 9999px;
+      border: 2px solid currentColor; border-top-color: transparent;
+      animation: spin .7s linear infinite; display: inline-block; vertical-align: -0.15em;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton, .spinner { animation: none; }
+      * { transition: none !important; }
+    }
+
+    /* Scrollbar discreta em áreas densas */
+    .scroll-x { overflow-x: auto; }
+    .scroll-x::-webkit-scrollbar { height: 8px; }
+    .scroll-x::-webkit-scrollbar-thumb { background: var(--sc-border-strong); border-radius: 8px; }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+
+<body class="bg-bg-app text-ink antialiased">
+<a href="#conteudo-principal" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-primary focus:shadow-raised">Pular para o conteúdo principal</a>
+
+<!-- ======================================================================
+     SHELL AUTENTICADO: sidebar + topbar + conteúdo
+     ====================================================================== -->
+<div class="min-h-screen lg:grid lg:grid-cols-[264px_1fr]">
+
+  <!-- ============================ SIDEBAR ============================ -->
+  <aside id="sidebar"
+         class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transform bg-marine text-white transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 lg:w-auto flex flex-col"
+         aria-label="Navegação principal">
+
+    <!-- Logotipo + módulo atual -->
+    <div class="px-5 pt-5 pb-4 border-b border-white/10">
+      <a href="#visao-geral" class="inline-flex items-baseline gap-1 text-xl font-extrabold tracking-tight text-white">
+        SICODE<span class="text-[color:var(--sc-accent)]" aria-hidden="true">.</span>
+      </a>
+      <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-white/60">Core · Hub de aplicações</p>
+    </div>
+
+    <!-- Seletor de contexto (organização / unidade) -->
+    <div class="px-4 py-3 border-b border-white/10">
+      <label for="ctx" class="block text-[11px] font-semibold uppercase tracking-wider text-white/50 mb-1">Contexto</label>
+      <select id="ctx" class="w-full rounded-md bg-marine-2 border border-white/15 text-sm text-white px-2.5 py-1.5">
+        <option>EDP · Espírito Santo</option>
+        <option>EDP · São Paulo</option>
+        <option>Corporativo</option>
+      </select>
+    </div>
+
+    <!-- Navegação principal -->
+    <nav class="flex-1 overflow-y-auto px-2 py-3" aria-label="Módulos do CORE">
+      <p class="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">Plataforma</p>
+      <ul class="space-y-0.5 text-sm">
+        <li><a href="#visao-geral" aria-current="page" class="nav-active flex items-center gap-2.5 rounded-md px-3 py-2 text-white hover:bg-marine-2">
+          <span aria-hidden="true">▦</span> Visão geral</a></li>
+        <li><a href="#usuarios" class="flex items-center gap-2.5 rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+          <span aria-hidden="true">◉</span> Usuários</a></li>
+        <li><a href="#formulario" class="flex items-center gap-2.5 rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+          <span aria-hidden="true">▣</span> Organizações</a></li>
+        <li><a href="#estados" class="flex items-center gap-2.5 rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+          <span aria-hidden="true">✎</span> Contratos</a></li>
+        <li><a href="#hub" class="flex items-center gap-2.5 rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+          <span aria-hidden="true">◫</span> Aplicações</a></li>
+        <li><a href="#componentes" class="flex items-center gap-2.5 rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+          <span aria-hidden="true">⚿</span> Acessos</a></li>
+        <li><a href="#acessibilidade" class="flex items-center gap-2.5 rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+          <span aria-hidden="true">≣</span> Auditoria</a></li>
+        <li><a href="#paleta" class="flex items-center gap-2.5 rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+          <span aria-hidden="true">◈</span> Design tokens</a></li>
+        <li><a href="#tema" class="flex items-center gap-2.5 rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+          <span aria-hidden="true">◐</span> Temas</a></li>
+      </ul>
+
+      <p class="px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">Aplicações</p>
+      <ul class="space-y-0.5 text-sm">
+        <li>
+          <a href="#hub" class="flex items-center justify-between rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+            <span>SICODE Legacy ES</span>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-white/70">
+              <span class="h-1.5 w-1.5 rounded-full bg-[color:var(--sc-accent)]" aria-hidden="true"></span> disponível
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="#hub" class="flex items-center justify-between rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+            <span>SICODE Legacy SP</span>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-white/70">
+              <span class="h-1.5 w-1.5 rounded-full bg-[color:var(--sc-accent)]" aria-hidden="true"></span> disponível
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="#sicodesk" class="flex items-center justify-between rounded-md px-3 py-2 text-white/80 hover:bg-marine-2 hover:text-white">
+            <span>SICODESK</span>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300/90">
+              <span aria-hidden="true">▲</span> restrito
+            </span>
+          </a>
+        </li>
+        <li>
+          <span class="flex items-center justify-between rounded-md px-3 py-2 text-white/40 cursor-not-allowed" aria-disabled="true">
+            <span>SICODE 2.0</span>
+            <span class="text-[11px] font-semibold">em implantação</span>
+          </span>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="px-5 py-4 border-t border-white/10 text-[11px] text-white/50">
+      Ambiente: <span class="font-semibold text-white/80">Homologação</span> · v1.1-theme-reference
+    </div>
+  </aside>
+
+  <!-- Overlay mobile da sidebar -->
+  <div id="sidebar-overlay" class="fixed inset-0 z-30 lg:hidden" style="background:var(--sc-overlay)" hidden></div>
+
+  <!-- ============================ ÁREA PRINCIPAL ============================ -->
+  <div class="flex min-w-0 flex-col">
+
+    <!-- ============================ TOPBAR ============================ -->
+    <header class="sticky top-0 z-20 border-b border-stroke bg-surface/95 backdrop-blur">
+      <div class="flex items-center gap-3 px-4 py-2.5 lg:px-6">
+
+        <!-- Botão de menu (mobile) -->
+        <button id="btn-sidebar" type="button"
+                class="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border border-stroke text-ink-2 hover:bg-primary-soft"
+                aria-controls="sidebar" aria-expanded="false" aria-label="Abrir navegação">
+          <span aria-hidden="true">☰</span>
+        </button>
+
+        <!-- Busca global -->
+        <form role="search" class="relative flex-1 max-w-xl" onsubmit="return false">
+          <label for="busca-global" class="sr-only">Busca global</label>
+          <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden="true">⌕</span>
+          <input id="busca-global" type="search" placeholder="Buscar usuários, contratos, aplicações…"
+                 class="w-full rounded-md border border-stroke bg-bg-app px-9 py-2 text-sm placeholder:text-ink-3 focus:border-primary" />
+          <kbd class="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-stroke bg-surface px-1.5 text-[11px] text-ink-3 sm:block">/</kbd>
+        </form>
+
+        <div class="ml-auto flex items-center gap-2">
+          <!-- Tema -->
+          <div class="relative">
+            <button id="theme-toggle" type="button" data-menu-button aria-expanded="false" aria-controls="menu-theme"
+                    class="inline-flex h-9 items-center gap-2 rounded-md border border-stroke px-2.5 text-ink-2 hover:bg-primary-soft"
+                    aria-label="Alterar tema da interface">
+              <span id="theme-icon" aria-hidden="true">◐</span>
+              <span id="theme-label" class="hidden text-xs font-semibold md:inline">Sistema</span>
+              <span class="text-ink-3" aria-hidden="true">▾</span>
+            </button>
+            <div id="menu-theme" hidden
+                 class="absolute right-0 mt-2 w-52 rounded-lg border border-stroke bg-surface-2 shadow-raised p-1.5 text-sm" role="menu" aria-label="Escolher tema">
+              <button type="button" role="menuitemradio" aria-checked="true" data-theme-choice="system" class="theme-choice flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left hover:bg-primary-soft">
+                <span><span class="font-semibold">Sistema</span><span class="block text-xs text-ink-3">Segue o dispositivo</span></span><span aria-hidden="true">◐</span>
+              </button>
+              <button type="button" role="menuitemradio" aria-checked="false" data-theme-choice="light" class="theme-choice flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left hover:bg-primary-soft">
+                <span><span class="font-semibold">Claro</span><span class="block text-xs text-ink-3">Tema padrão luminoso</span></span><span aria-hidden="true">☀</span>
+              </button>
+              <button type="button" role="menuitemradio" aria-checked="false" data-theme-choice="dark" class="theme-choice flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left hover:bg-primary-soft">
+                <span><span class="font-semibold">Escuro</span><span class="block text-xs text-ink-3">Superfícies de baixa luminância</span></span><span aria-hidden="true">☾</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Notificações -->
+          <div class="relative">
+            <button type="button" data-menu-button aria-expanded="false" aria-controls="menu-notif"
+                    class="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-stroke text-ink-2 hover:bg-primary-soft"
+                    aria-label="Notificações — 3 não lidas">
+              <span aria-hidden="true">🔔</span>
+              <span class="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">3</span>
+            </button>
+            <div id="menu-notif" hidden
+                 class="absolute right-0 mt-2 w-80 rounded-lg border border-stroke bg-surface-2 shadow-raised p-2 text-sm" role="menu">
+              <p class="px-2 py-1.5 text-xs font-bold uppercase tracking-wide text-ink-3">Notificações</p>
+              <a href="#" role="menuitem" class="block rounded-md px-2 py-2 hover:bg-primary-soft">
+                <span class="font-semibold">Acesso suspenso</span> — Carlos Lima (Prestadora Alfa)
+                <span class="block text-xs text-ink-3">há 12 min</span></a>
+              <a href="#" role="menuitem" class="block rounded-md px-2 py-2 hover:bg-primary-soft">
+                <span class="font-semibold">Contrato CT-2025-114</span> expira em 15 dias
+                <span class="block text-xs text-ink-3">há 2 h</span></a>
+              <a href="#" role="menuitem" class="block rounded-md px-2 py-2 hover:bg-primary-soft">
+                <span class="font-semibold">SICODESK</span> — 2 tickets críticos na fila N2
+                <span class="block text-xs text-ink-3">há 4 h</span></a>
+            </div>
+          </div>
+
+          <!-- Menu do usuário -->
+          <div class="relative">
+            <button type="button" data-menu-button aria-expanded="false" aria-controls="menu-user"
+                    class="inline-flex items-center gap-2 rounded-md border border-stroke px-2 py-1.5 text-sm hover:bg-primary-soft">
+              <span class="flex h-7 w-7 items-center justify-center rounded-full bg-marine text-xs font-bold text-white" aria-hidden="true">AS</span>
+              <span class="hidden sm:block font-semibold">Ana Souza</span>
+              <span class="text-ink-3" aria-hidden="true">▾</span>
+            </button>
+            <div id="menu-user" hidden
+                 class="absolute right-0 mt-2 w-56 rounded-lg border border-stroke bg-surface-2 shadow-raised p-1.5 text-sm" role="menu">
+              <p class="px-2.5 py-1.5 text-xs text-ink-3">ana.souza@organizacao.interna<br /><span class="font-semibold text-ink-2">Administradora · CORE</span></p>
+              <hr class="my-1 border-stroke" />
+              <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Minha conta</a>
+              <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Preferências</a>
+              <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 text-danger hover:bg-danger-soft">Sair</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Breadcrumb -->
+      <nav aria-label="Trilha de navegação" class="border-t border-stroke bg-surface px-4 py-2 lg:px-6">
+        <ol class="flex flex-wrap items-center gap-1.5 text-xs text-ink-3">
+          <li><a href="#visao-geral" class="hover:text-primary hover:underline">SICODE CORE</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href="#hub" class="hover:text-primary hover:underline">Hub de aplicações</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" class="font-semibold text-ink-2">Visão geral</li>
+        </ol>
+      </nav>
+    </header>
+
+    <!-- ============================ CONTEÚDO ============================ -->
+    <main id="conteudo-principal" tabindex="-1" class="flex-1 space-y-12 px-4 py-6 lg:px-6 lg:py-8">
+
+      <!-- Aviso de mockup -->
+      <div class="rounded-lg border border-info bg-info-soft px-4 py-3 text-sm" role="note">
+        <p><span class="font-bold text-info">Mockup de referência.</span>
+        <span class="text-ink-2"> Este arquivo demonstra a linguagem visual proposta para o SICODE Ecosystem. Dados fictícios; nenhum comportamento representa regra de negócio.</span></p>
+      </div>
+
+
+      <!-- Contrato normativo para agentes -->
+      <section id="contrato-agentes" aria-labelledby="h-contrato" class="scroll-mt-24 rounded-lg border-2 border-marine bg-surface shadow-card">
+        <div class="border-b border-stroke px-5 py-4">
+          <p class="text-xs font-bold uppercase tracking-widest text-primary">Contrato de implementação visual</p>
+          <h2 id="h-contrato" class="mt-1 text-xl font-extrabold tracking-tight text-marine">Como agentes devem usar este mock</h2>
+          <p class="mt-1 text-sm text-ink-2">Este catálogo é referência de composição e comportamento. A aplicação real deve transformar os padrões em tokens e componentes reutilizáveis, sem copiar indiscriminadamente a página inteira.</p>
+        </div>
+        <div class="grid gap-0 lg:grid-cols-3">
+          <div class="border-b border-stroke p-5 lg:border-b-0 lg:border-r">
+            <h3 class="text-sm font-extrabold uppercase tracking-wide text-success">Obrigatório</h3>
+            <ul class="mt-3 space-y-2 text-sm text-ink-2">
+              <li>✓ Consumir tokens semânticos, nunca hex em componentes.</li>
+              <li>✓ Reutilizar componentes e variantes já definidos.</li>
+              <li>✓ Implementar todos os estados: foco, erro, loading, vazio e desabilitado.</li>
+              <li>✓ Preservar densidade corporativa, responsividade e navegação por teclado.</li>
+              <li>✓ Mapear status de domínio para intenções visuais.</li>
+            </ul>
+          </div>
+          <div class="border-b border-stroke p-5 lg:border-b-0 lg:border-r">
+            <h3 class="text-sm font-extrabold uppercase tracking-wide text-danger">Proibido</h3>
+            <ul class="mt-3 space-y-2 text-sm text-ink-2">
+              <li>✕ Criar paleta, radius, sombra ou tipografia por tela.</li>
+              <li>✕ Usar cor como único meio de comunicar estado.</li>
+              <li>✕ Criar componentes visualmente equivalentes com APIs diferentes.</li>
+              <li>✕ Usar placeholder como label ou remover foco visível.</li>
+              <li>✕ Tratar este HTML demonstrativo como código de produção.</li>
+            </ul>
+          </div>
+          <div class="p-5">
+            <h3 class="text-sm font-extrabold uppercase tracking-wide text-info">Quando evoluir</h3>
+            <ul class="mt-3 space-y-2 text-sm text-ink-2">
+              <li>• Necessidade nova deve ser confrontada com o catálogo.</li>
+              <li>• Nova variante exige caso de uso recorrente e acessibilidade validada.</li>
+              <li>• Alteração de identidade visual exige revisão do design system.</li>
+              <li>• Exceções locais devem ser documentadas e não podem virar padrão acidental.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           1. VISÃO GERAL / DASHBOARD
+           ================================================================ -->
+      <section id="visao-geral" aria-labelledby="h-dash" class="scroll-mt-24">
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 id="h-dash" class="text-2xl font-extrabold tracking-tight text-marine">Visão geral</h1>
+            <p class="text-sm text-ink-2">Indicadores consolidados da plataforma · atualizado há 5 min</p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="rounded-md border border-stroke bg-surface px-3.5 py-2 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Exportar</button>
+            <button type="button" class="rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Novo usuário</button>
+          </div>
+        </div>
+
+        <!-- Alerta institucional -->
+        <div class="mb-5 flex items-start gap-3 rounded-lg border border-warning bg-warning-soft px-4 py-3 text-sm" role="status">
+          <span class="mt-0.5 font-bold text-warning" aria-hidden="true">▲</span>
+          <div>
+            <p class="font-bold text-warning">Janela de manutenção programada</p>
+            <p class="text-ink-2">SICODE Legacy SP ficará indisponível no sábado, 18/07, das 22h às 02h, para migração de base.</p>
+          </div>
+        </div>
+
+        <!-- Cards de métricas -->
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Usuários ativos</p>
+            <p class="mt-1 text-2xl font-extrabold tabular-nums">1.284</p>
+            <p class="mt-1 text-xs font-semibold text-success">▲ +38 no mês</p>
+          </div>
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Organizações ativas</p>
+            <p class="mt-1 text-2xl font-extrabold tabular-nums">27</p>
+            <p class="mt-1 text-xs text-ink-3">3 prestadoras novas</p>
+          </div>
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Contratos vigentes</p>
+            <p class="mt-1 text-2xl font-extrabold tabular-nums">64</p>
+            <p class="mt-1 text-xs font-semibold text-warning">▲ 4 expiram em 30 dias</p>
+          </div>
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Aplicações disponíveis</p>
+            <p class="mt-1 text-2xl font-extrabold tabular-nums">3<span class="text-base font-bold text-ink-3">/4</span></p>
+            <p class="mt-1 text-xs text-ink-3">SICODE 2.0 em implantação</p>
+          </div>
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Acessos suspensos</p>
+            <p class="mt-1 text-2xl font-extrabold tabular-nums text-danger">12</p>
+            <p class="mt-1 text-xs font-semibold text-danger">▲ +5 na semana</p>
+          </div>
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Eventos (24 h)</p>
+            <p class="mt-1 text-2xl font-extrabold tabular-nums">3.910</p>
+            <p class="mt-1 text-xs text-ink-3">auditoria completa</p>
+          </div>
+        </div>
+
+        <!-- Gráficos e atividade -->
+        <div class="mt-5 grid gap-4 lg:grid-cols-3">
+          <!-- Gráfico de barras (CSS puro, demonstrativo) -->
+          <figure class="rounded-lg border border-stroke bg-surface p-4 shadow-card lg:col-span-2">
+            <figcaption class="mb-3 flex items-baseline justify-between">
+              <h2 class="text-sm font-bold">Autenticações por dia</h2>
+              <span class="text-xs text-ink-3">últimos 14 dias · dados fictícios</span>
+            </figcaption>
+            <div class="flex h-40 items-end gap-1.5" role="img"
+                 aria-label="Gráfico de barras de autenticações diárias, variando entre 240 e 610, com pico na quarta-feira passada">
+              <div class="flex-1 rounded-t bg-primary/30" style="height:42%"></div>
+              <div class="flex-1 rounded-t bg-primary/30" style="height:55%"></div>
+              <div class="flex-1 rounded-t bg-primary/30" style="height:48%"></div>
+              <div class="flex-1 rounded-t bg-primary/30" style="height:61%"></div>
+              <div class="flex-1 rounded-t bg-primary/30" style="height:39%"></div>
+              <div class="flex-1 rounded-t bg-primary/20" style="height:22%"></div>
+              <div class="flex-1 rounded-t bg-primary/20" style="height:18%"></div>
+              <div class="flex-1 rounded-t bg-primary/50" style="height:52%"></div>
+              <div class="flex-1 rounded-t bg-primary/50" style="height:66%"></div>
+              <div class="flex-1 rounded-t bg-primary" style="height:100%"></div>
+              <div class="flex-1 rounded-t bg-primary/50" style="height:72%"></div>
+              <div class="flex-1 rounded-t bg-primary/50" style="height:58%"></div>
+              <div class="flex-1 rounded-t bg-primary/30" style="height:30%"></div>
+              <div class="flex-1 rounded-t bg-primary/30" style="height:26%"></div>
+            </div>
+            <div class="mt-2 flex justify-between text-[11px] text-ink-3" aria-hidden="true">
+              <span>29/06</span><span>06/07</span><span>12/07</span>
+            </div>
+          </figure>
+
+          <!-- Distribuição de acessos -->
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <h2 class="mb-3 text-sm font-bold">Distribuição de acessos por aplicação</h2>
+            <dl class="space-y-3 text-sm">
+              <div>
+                <div class="flex justify-between"><dt class="font-semibold">Legacy ES</dt><dd class="tabular-nums text-ink-2">46%</dd></div>
+                <div class="mt-1 h-2 rounded-full bg-bg-app"><div class="h-2 rounded-full bg-primary" style="width:46%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between"><dt class="font-semibold">Legacy SP</dt><dd class="tabular-nums text-ink-2">31%</dd></div>
+                <div class="mt-1 h-2 rounded-full bg-bg-app"><div class="h-2 rounded-full bg-primary/70" style="width:31%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between"><dt class="font-semibold">SICODESK</dt><dd class="tabular-nums text-ink-2">21%</dd></div>
+                <div class="mt-1 h-2 rounded-full bg-bg-app"><div class="h-2 rounded-full bg-marine" style="width:21%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between"><dt class="font-semibold text-ink-3">SICODE 2.0</dt><dd class="tabular-nums text-ink-3">2%</dd></div>
+                <div class="mt-1 h-2 rounded-full bg-bg-app"><div class="h-2 rounded-full bg-stroke-strong" style="width:2%"></div></div>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Atividade recente -->
+        <div class="mt-4 rounded-lg border border-stroke bg-surface shadow-card">
+          <h2 class="border-b border-stroke px-4 py-3 text-sm font-bold">Atividade recente</h2>
+          <ul class="divide-y divide-stroke text-sm">
+            <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
+              <span class="inline-flex rounded-full border border-success bg-success-soft px-2 py-0.5 text-[11px] font-bold text-success">✓ criado</span>
+              <span><span class="font-semibold">Marina Alves</span> cadastrou o usuário <span class="font-semibold">João Santos</span> (Prestadora Alfa)</span>
+              <time class="ml-auto text-xs text-ink-3" datetime="2026-07-13T10:12">10:12</time>
+            </li>
+            <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
+              <span class="inline-flex rounded-full border border-danger bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">✕ suspenso</span>
+              <span>Acesso de <span class="font-semibold">Carlos Lima</span> ao Legacy SP suspenso por expiração de contrato</span>
+              <time class="ml-auto text-xs text-ink-3" datetime="2026-07-13T09:47">09:47</time>
+            </li>
+            <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
+              <span class="inline-flex rounded-full border border-info bg-info-soft px-2 py-0.5 text-[11px] font-bold text-info">i alterado</span>
+              <span>Contrato <span class="font-semibold">CT-2025-114</span> teve vigência estendida até 12/2026</span>
+              <time class="ml-auto text-xs text-ink-3" datetime="2026-07-13T08:30">08:30</time>
+            </li>
+          </ul>
+          <div class="border-t border-stroke px-4 py-2.5">
+            <a href="#" class="text-sm font-semibold text-primary hover:underline">Ver auditoria completa →</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           2. HUB DE APLICAÇÕES
+           ================================================================ -->
+      <section id="hub" aria-labelledby="h-hub" class="scroll-mt-24">
+        <h2 id="h-hub" class="text-xl font-extrabold tracking-tight text-marine">Hub de aplicações</h2>
+        <p class="mb-4 text-sm text-ink-2">Aplicações do ecossistema disponíveis para o seu perfil no contexto <span class="font-semibold">EDP · Espírito Santo</span>.</p>
+
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+          <!-- ES: disponível -->
+          <article class="flex flex-col rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="text-base font-bold">SICODE Legacy ES</h3>
+              <span class="rounded-full border border-stroke bg-bg-app px-2 py-0.5 text-[11px] font-bold text-ink-2">ES · Produção</span>
+            </div>
+            <p class="mt-1 flex-1 text-sm text-ink-2">Ordens de Vistoria e operações da distribuição no Espírito Santo.</p>
+            <p class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-success">
+              <span class="h-2 w-2 rounded-full bg-success" aria-hidden="true"></span> Operacional
+            </p>
+            <p class="mt-1 text-xs text-ink-3">Último acesso: hoje, 08:52</p>
+            <button type="button" class="mt-3 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Acessar aplicação</button>
+          </article>
+
+          <!-- SP: disponível -->
+          <article class="flex flex-col rounded-lg border border-stroke bg-surface p-4 shadow-card">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="text-base font-bold">SICODE Legacy SP</h3>
+              <span class="rounded-full border border-stroke bg-bg-app px-2 py-0.5 text-[11px] font-bold text-ink-2">SP · Produção</span>
+            </div>
+            <p class="mt-1 flex-1 text-sm text-ink-2">Ordens de Vistoria e operações da distribuição em São Paulo.</p>
+            <p class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-success">
+              <span class="h-2 w-2 rounded-full bg-success" aria-hidden="true"></span> Operacional
+            </p>
+            <p class="mt-1 text-xs text-ink-3">Último acesso: sexta, 17:34</p>
+            <button type="button" class="mt-3 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Acessar aplicação</button>
+          </article>
+
+          <!-- SICODESK: destaque + acesso restrito -->
+          <article class="relative flex flex-col rounded-lg border-2 border-primary bg-surface p-4 shadow-raised">
+            <span class="absolute -top-2.5 left-4 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-bold text-white">Novo módulo</span>
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="text-base font-bold">SICODESK</h3>
+              <span class="rounded-full border border-stroke bg-bg-app px-2 py-0.5 text-[11px] font-bold text-ink-2">Corporativo · Piloto</span>
+            </div>
+            <p class="mt-1 flex-1 text-sm text-ink-2">Central de tickets, filas, equipes e SLA para atendimento interno.</p>
+            <p class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-warning">
+              <span aria-hidden="true">⚿</span> Acesso restrito — solicite autorização
+            </p>
+            <p class="mt-1 text-xs text-ink-3">Você ainda não acessou esta aplicação</p>
+            <button type="button" class="mt-3 w-full rounded-md border border-primary px-3 py-2 text-sm font-semibold text-primary hover:bg-primary-soft">Solicitar acesso</button>
+          </article>
+
+          <!-- SICODE 2.0: indisponível / em desenvolvimento -->
+          <article class="flex flex-col rounded-lg border border-dashed border-stroke-strong bg-bg-app p-4">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="text-base font-bold text-ink-2">SICODE 2.0</h3>
+              <span class="rounded-full border border-stroke bg-surface px-2 py-0.5 text-[11px] font-bold text-ink-3">Em implantação</span>
+            </div>
+            <p class="mt-1 flex-1 text-sm text-ink-3">Nova geração unificada das operações — ES e SP em plataforma única.</p>
+            <p class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-ink-3">
+              <span class="h-2 w-2 rounded-full bg-stroke-strong" aria-hidden="true"></span> Indisponível · previsão Q4 2026
+            </p>
+            <p class="mt-1 text-xs text-ink-3">—</p>
+            <button type="button" disabled aria-disabled="true"
+                    class="mt-3 w-full cursor-not-allowed rounded-md bg-disabled-bg px-3 py-2 text-sm font-semibold text-disabled-ink">Indisponível</button>
+          </article>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           3. TABELA CORPORATIVA — USUÁRIOS
+           ================================================================ -->
+      <section id="usuarios" aria-labelledby="h-users" class="scroll-mt-24">
+        <h2 id="h-users" class="text-xl font-extrabold tracking-tight text-marine">Usuários</h2>
+        <p class="mb-4 text-sm text-ink-2">Tabela corporativa de referência — densidade, filtros, seleção, ordenação, ações por linha e estados.</p>
+
+        <div class="rounded-lg border border-stroke bg-surface shadow-card">
+          <!-- Toolbar da tabela -->
+          <div class="flex flex-wrap items-center gap-2 border-b border-stroke px-4 py-3">
+            <label for="busca-usuarios" class="sr-only">Buscar usuários</label>
+            <input id="busca-usuarios" type="search" placeholder="Buscar por nome ou e-mail…"
+                   class="w-full sm:w-64 rounded-md border border-stroke bg-bg-app px-3 py-1.5 text-sm placeholder:text-ink-3" />
+            <label class="sr-only" for="f-org">Filtrar por organização</label>
+            <select id="f-org" class="rounded-md border border-stroke bg-surface px-2.5 py-1.5 text-sm">
+              <option>Todas as organizações</option><option>Organização Interna</option>
+              <option>Prestadora Alfa</option><option>Consultoria Beta</option>
+            </select>
+            <label class="sr-only" for="f-status">Filtrar por status</label>
+            <select id="f-status" class="rounded-md border border-stroke bg-surface px-2.5 py-1.5 text-sm">
+              <option>Todos os status</option><option>Ativo</option><option>Pendente</option><option>Suspenso</option>
+            </select>
+
+            <!-- Alternador de densidade -->
+            <div class="ml-auto inline-flex rounded-md border border-stroke p-0.5" role="group" aria-label="Densidade da tabela">
+              <button type="button" id="btn-comfy" aria-pressed="true"
+                      class="rounded px-2.5 py-1 text-xs font-semibold bg-primary-soft text-primary">Confortável</button>
+              <button type="button" id="btn-compact" aria-pressed="false"
+                      class="rounded px-2.5 py-1 text-xs font-semibold text-ink-2 hover:bg-bg-app">Compacta</button>
+            </div>
+          </div>
+
+          <!-- Barra de seleção -->
+          <div id="selection-bar" class="flex items-center gap-3 border-b border-primary bg-primary-soft px-4 py-2 text-sm" hidden>
+            <span class="font-semibold text-primary"><span id="sel-count">0</span> selecionado(s)</span>
+            <button type="button" class="rounded-md border border-primary px-2.5 py-1 text-xs font-semibold text-primary hover:bg-surface">Exportar seleção</button>
+            <button type="button" class="rounded-md border border-danger px-2.5 py-1 text-xs font-semibold text-danger hover:bg-danger-soft">Suspender acessos</button>
+          </div>
+
+          <div class="scroll-x">
+            <table id="tabela-usuarios" class="density-comfortable w-full min-w-[860px] text-left text-sm">
+              <caption class="sr-only">Lista de usuários com organização, aplicações, status e último acesso</caption>
+              <thead class="border-b border-stroke bg-bg-app text-xs uppercase tracking-wide text-ink-2">
+                <tr>
+                  <th scope="col" class="w-10 px-4">
+                    <input type="checkbox" id="sel-all" aria-label="Selecionar todos os usuários" class="h-4 w-4 rounded border-stroke-strong text-primary" />
+                  </th>
+                  <th scope="col" class="px-3" aria-sort="ascending">
+                    <button type="button" class="inline-flex items-center gap-1 font-bold hover:text-primary">Nome <span aria-hidden="true">▲</span></button>
+                  </th>
+                  <th scope="col" class="px-3"><button type="button" class="inline-flex items-center gap-1 font-bold hover:text-primary">E-mail</button></th>
+                  <th scope="col" class="px-3"><button type="button" class="inline-flex items-center gap-1 font-bold hover:text-primary">Organização</button></th>
+                  <th scope="col" class="px-3">Aplicações</th>
+                  <th scope="col" class="px-3"><button type="button" class="inline-flex items-center gap-1 font-bold hover:text-primary">Status</button></th>
+                  <th scope="col" class="px-3"><button type="button" class="inline-flex items-center gap-1 font-bold hover:text-primary">Último acesso</button></th>
+                  <th scope="col" class="px-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stroke">
+                <tr class="hover:bg-primary-soft/40">
+                  <td class="px-4"><input type="checkbox" class="row-check h-4 w-4 rounded border-stroke-strong text-primary" aria-label="Selecionar Ana Souza" /></td>
+                  <td class="px-3 font-semibold">Ana Souza</td>
+                  <td class="px-3 text-ink-2">ana.souza@organizacao.interna</td>
+                  <td class="px-3">Organização Interna</td>
+                  <td class="px-3 text-ink-2">CORE · ES · SICODESK</td>
+                  <td class="px-3"><span class="inline-flex items-center gap-1 rounded-full border border-success bg-success-soft px-2 py-0.5 text-[11px] font-bold text-success">✓ Ativo</span></td>
+                  <td class="px-3 tabular-nums text-ink-2">hoje, 10:41</td>
+                  <td class="px-3 text-right">
+                    <div class="relative inline-block">
+                      <button type="button" data-menu-button aria-expanded="false" aria-controls="row-menu-1" aria-label="Ações para Ana Souza"
+                              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stroke text-ink-2 hover:bg-primary-soft">⋮</button>
+                      <div id="row-menu-1" hidden role="menu"
+                           class="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-stroke bg-surface-2 p-1 text-left text-sm shadow-raised">
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Visualizar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Editar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Auditar</a>
+                        <hr class="my-1 border-stroke" />
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 text-danger hover:bg-danger-soft">Suspender acesso</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-primary-soft/40">
+                  <td class="px-4"><input type="checkbox" class="row-check h-4 w-4 rounded border-stroke-strong text-primary" aria-label="Selecionar Carlos Lima" /></td>
+                  <td class="px-3 font-semibold">Carlos Lima</td>
+                  <td class="px-3 text-ink-2">carlos.lima@prestadora-alfa.com</td>
+                  <td class="px-3">Prestadora Alfa</td>
+                  <td class="px-3 text-ink-2">SP</td>
+                  <td class="px-3"><span class="inline-flex items-center gap-1 rounded-full border border-danger bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">✕ Suspenso</span></td>
+                  <td class="px-3 tabular-nums text-ink-2">02/07, 16:03</td>
+                  <td class="px-3 text-right">
+                    <div class="relative inline-block">
+                      <button type="button" data-menu-button aria-expanded="false" aria-controls="row-menu-2" aria-label="Ações para Carlos Lima"
+                              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stroke text-ink-2 hover:bg-primary-soft">⋮</button>
+                      <div id="row-menu-2" hidden role="menu"
+                           class="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-stroke bg-surface-2 p-1 text-left text-sm shadow-raised">
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Visualizar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Editar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Auditar</a>
+                        <hr class="my-1 border-stroke" />
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Reativar acesso</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-primary-soft/40">
+                  <td class="px-4"><input type="checkbox" class="row-check h-4 w-4 rounded border-stroke-strong text-primary" aria-label="Selecionar Marina Alves" /></td>
+                  <td class="px-3 font-semibold">Marina Alves</td>
+                  <td class="px-3 text-ink-2">marina.alves@organizacao.interna</td>
+                  <td class="px-3">Organização Interna</td>
+                  <td class="px-3 text-ink-2">CORE · ES · SP · SICODESK</td>
+                  <td class="px-3"><span class="inline-flex items-center gap-1 rounded-full border border-success bg-success-soft px-2 py-0.5 text-[11px] font-bold text-success">✓ Ativo</span></td>
+                  <td class="px-3 tabular-nums text-ink-2">hoje, 09:12</td>
+                  <td class="px-3 text-right">
+                    <div class="relative inline-block">
+                      <button type="button" data-menu-button aria-expanded="false" aria-controls="row-menu-3" aria-label="Ações para Marina Alves"
+                              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stroke text-ink-2 hover:bg-primary-soft">⋮</button>
+                      <div id="row-menu-3" hidden role="menu"
+                           class="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-stroke bg-surface-2 p-1 text-left text-sm shadow-raised">
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Visualizar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Editar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Auditar</a>
+                        <hr class="my-1 border-stroke" />
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 text-danger hover:bg-danger-soft">Suspender acesso</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-primary-soft/40">
+                  <td class="px-4"><input type="checkbox" class="row-check h-4 w-4 rounded border-stroke-strong text-primary" aria-label="Selecionar João Santos" /></td>
+                  <td class="px-3 font-semibold">João Santos</td>
+                  <td class="px-3 text-ink-2">joao.santos@prestadora-alfa.com</td>
+                  <td class="px-3">Prestadora Alfa</td>
+                  <td class="px-3 text-ink-2">ES</td>
+                  <td class="px-3"><span class="inline-flex items-center gap-1 rounded-full border border-warning bg-warning-soft px-2 py-0.5 text-[11px] font-bold text-warning">◷ Pendente</span></td>
+                  <td class="px-3 tabular-nums text-ink-3">nunca acessou</td>
+                  <td class="px-3 text-right">
+                    <div class="relative inline-block">
+                      <button type="button" data-menu-button aria-expanded="false" aria-controls="row-menu-4" aria-label="Ações para João Santos"
+                              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stroke text-ink-2 hover:bg-primary-soft">⋮</button>
+                      <div id="row-menu-4" hidden role="menu"
+                           class="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-stroke bg-surface-2 p-1 text-left text-sm shadow-raised">
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Visualizar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Editar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Auditar</a>
+                        <hr class="my-1 border-stroke" />
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 text-danger hover:bg-danger-soft">Suspender acesso</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-primary-soft/40">
+                  <td class="px-4"><input type="checkbox" class="row-check h-4 w-4 rounded border-stroke-strong text-primary" aria-label="Selecionar Beatriz Rocha" /></td>
+                  <td class="px-3 font-semibold">Beatriz Rocha</td>
+                  <td class="px-3 text-ink-2">beatriz.rocha@consultoria-beta.com</td>
+                  <td class="px-3">Consultoria Beta</td>
+                  <td class="px-3 text-ink-2">SICODESK</td>
+                  <td class="px-3"><span class="inline-flex items-center gap-1 rounded-full border border-info bg-info-soft px-2 py-0.5 text-[11px] font-bold text-info">i Em análise</span></td>
+                  <td class="px-3 tabular-nums text-ink-2">10/07, 14:20</td>
+                  <td class="px-3 text-right">
+                    <div class="relative inline-block">
+                      <button type="button" data-menu-button aria-expanded="false" aria-controls="row-menu-5" aria-label="Ações para Beatriz Rocha"
+                              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stroke text-ink-2 hover:bg-primary-soft">⋮</button>
+                      <div id="row-menu-5" hidden role="menu"
+                           class="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-stroke bg-surface-2 p-1 text-left text-sm shadow-raised">
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Visualizar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Editar</a>
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Auditar</a>
+                        <hr class="my-1 border-stroke" />
+                        <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 text-danger hover:bg-danger-soft">Suspender acesso</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Paginação -->
+          <nav class="flex flex-wrap items-center justify-between gap-3 border-t border-stroke px-4 py-3 text-sm" aria-label="Paginação de usuários">
+            <p class="text-ink-3">Exibindo <span class="font-semibold text-ink-2">1–5</span> de <span class="font-semibold text-ink-2">1.284</span></p>
+            <ul class="flex items-center gap-1">
+              <li><button type="button" disabled class="rounded-md border border-stroke px-2.5 py-1.5 text-disabled-ink cursor-not-allowed">← Anterior</button></li>
+              <li><button type="button" aria-current="page" class="rounded-md bg-primary px-3 py-1.5 font-semibold text-white">1</button></li>
+              <li><button type="button" class="rounded-md border border-stroke px-3 py-1.5 hover:bg-primary-soft">2</button></li>
+              <li><button type="button" class="rounded-md border border-stroke px-3 py-1.5 hover:bg-primary-soft">3</button></li>
+              <li><span class="px-1 text-ink-3">…</span></li>
+              <li><button type="button" class="rounded-md border border-stroke px-3 py-1.5 hover:bg-primary-soft">257</button></li>
+              <li><button type="button" class="rounded-md border border-stroke px-2.5 py-1.5 hover:bg-primary-soft">Próxima →</button></li>
+            </ul>
+          </nav>
+        </div>
+
+        <!-- Estados da tabela -->
+        <div class="mt-4 grid gap-4 lg:grid-cols-3">
+          <!-- Carregando -->
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card" aria-busy="true">
+            <p class="mb-3 text-xs font-bold uppercase tracking-wide text-ink-3">Estado: carregando</p>
+            <div class="space-y-2.5">
+              <div class="skeleton h-4 w-3/4"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-5/6"></div>
+              <div class="skeleton h-4 w-2/3"></div>
+            </div>
+            <p class="sr-only" role="status">Carregando lista de usuários…</p>
+          </div>
+          <!-- Vazio -->
+          <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card text-center">
+            <p class="mb-3 text-left text-xs font-bold uppercase tracking-wide text-ink-3">Estado: vazio</p>
+            <p class="text-3xl" aria-hidden="true">⌕</p>
+            <p class="mt-1 font-bold">Nenhum usuário encontrado</p>
+            <p class="text-sm text-ink-2">Ajuste os filtros ou cadastre o primeiro usuário desta organização.</p>
+            <button type="button" class="mt-3 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Cadastrar usuário</button>
+          </div>
+          <!-- Erro -->
+          <div class="rounded-lg border border-danger bg-surface p-4 shadow-card text-center" role="alert">
+            <p class="mb-3 text-left text-xs font-bold uppercase tracking-wide text-ink-3">Estado: erro</p>
+            <p class="text-3xl text-danger" aria-hidden="true">✕</p>
+            <p class="mt-1 font-bold text-danger">Não foi possível carregar os usuários</p>
+            <p class="text-sm text-ink-2">O serviço de identidade não respondeu (código 504). Tente novamente.</p>
+            <button type="button" class="mt-3 rounded-md border border-danger px-3.5 py-2 text-sm font-semibold text-danger hover:bg-danger-soft">Tentar novamente</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           4. FORMULÁRIO — CADASTRO/EDIÇÃO DE USUÁRIO
+           ================================================================ -->
+
+      <section id="formulario" aria-labelledby="h-form" class="scroll-mt-24">
+        <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="h-form" class="text-xl font-extrabold tracking-tight text-marine">Formulário moderno de referência — usuário</h2>
+            <p class="text-sm text-ink-2">Layout em blocos, melhor hierarquia visual, confirmações claras, resumo lateral e feedbacks modernos. Labels continuam sempre visíveis e o formulário demonstra como o design system deve tratar cadastros administrativos.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="inline-flex items-center gap-1 rounded-full border border-info bg-info-soft px-2.5 py-1 text-[11px] font-bold text-info">i Draft auto salvo</span>
+            <span class="inline-flex items-center gap-1 rounded-full border border-warning bg-warning-soft px-2.5 py-1 text-[11px] font-bold text-warning">◷ Convite pendente</span>
+          </div>
+        </div>
+
+        <div class="mb-5 grid gap-3 xl:grid-cols-4">
+          <div class="rounded-xl border border-primary bg-primary-soft p-4 shadow-card xl:col-span-1">
+            <p class="text-xs font-extrabold uppercase tracking-wide text-primary">Progresso do cadastro</p>
+            <ol class="mt-3 space-y-2 text-sm">
+              <li class="flex items-center gap-2 font-semibold text-primary"><span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">1</span> Dados pessoais</li>
+              <li class="flex items-center gap-2 font-semibold text-primary"><span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">2</span> Organização e contrato</li>
+              <li class="flex items-center gap-2 font-semibold text-ink-2"><span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-stroke bg-surface text-xs font-bold text-ink-2">3</span> Acessos e segurança</li>
+              <li class="flex items-center gap-2 font-semibold text-ink-3"><span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-stroke bg-surface text-xs font-bold text-ink-3">4</span> Revisão e envio</li>
+            </ol>
+          </div>
+          <div class="rounded-xl border border-stroke bg-surface p-4 shadow-card xl:col-span-3">
+            <div class="grid gap-3 md:grid-cols-3">
+              <div class="rounded-lg border border-stroke bg-bg-app px-3 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Modelo</p>
+                <p class="mt-1 text-sm font-bold">Cadastro guiado</p>
+                <p class="mt-1 text-xs text-ink-2">Separação em blocos com feedback contextual e sumário lateral.</p>
+              </div>
+              <div class="rounded-lg border border-stroke bg-bg-app px-3 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Ações seguras</p>
+                <p class="mt-1 text-sm font-bold">Confirmação explícita</p>
+                <p class="mt-1 text-xs text-ink-2">Envio, suspensão e exclusão usam confirmação secundária.</p>
+              </div>
+              <div class="rounded-lg border border-stroke bg-bg-app px-3 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-ink-3">Feedback</p>
+                <p class="mt-1 text-sm font-bold">Toast + alerta inline</p>
+                <p class="mt-1 text-xs text-ink-2">Estados rápidos para sucesso, atenção e erro sem quebrar o fluxo.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-5 2xl:grid-cols-[minmax(0,1.7fr)_360px]">
+          <form class="space-y-5" onsubmit="return false" novalidate>
+
+            <section class="overflow-hidden rounded-xl border border-stroke bg-surface shadow-card">
+              <div class="border-b border-stroke px-5 py-4">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-extrabold uppercase tracking-wide text-primary">Bloco 1</p>
+                    <h3 class="mt-1 text-base font-extrabold text-marine">Dados pessoais e identidade</h3>
+                    <p class="mt-1 text-sm text-ink-2">Base principal do cadastro com campos prioritários e contexto visual do usuário.</p>
+                  </div>
+                  <div class="rounded-lg border border-stroke bg-bg-app px-3 py-2 text-right text-xs">
+                    <p class="font-semibold text-ink-3">Perfil visual</p>
+                    <p class="mt-1 text-sm font-bold text-ink">Usuário operacional</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-5">
+                <div class="mb-5 rounded-xl border border-primary/20 bg-primary-soft/70 p-4">
+                  <div class="flex flex-wrap items-center gap-4">
+                    <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-marine text-lg font-extrabold text-white shadow-card">JS</div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h4 class="text-base font-extrabold text-marine">João Santos</h4>
+                        <span class="inline-flex items-center gap-1 rounded-full border border-warning bg-warning-soft px-2 py-0.5 text-[11px] font-bold text-warning">◷ Convite não enviado</span>
+                        <span class="inline-flex items-center gap-1 rounded-full border border-info bg-info-soft px-2 py-0.5 text-[11px] font-bold text-info">i Novo cadastro</span>
+                      </div>
+                      <p class="mt-1 text-sm text-ink-2">O cabeçalho do formulário deve contextualizar quem está sendo editado e destacar o estado atual do fluxo.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <button type="button" class="rounded-md border border-stroke bg-surface px-3 py-2 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Pré-visualizar ficha</button>
+                      <button type="button" class="rounded-md border border-primary px-3 py-2 text-sm font-semibold text-primary hover:bg-surface">Gerar convite</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
+                  <div class="xl:col-span-6">
+                    <label for="f-nome" class="mb-1 block text-sm font-semibold">Nome completo <span class="text-danger" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></label>
+                    <input id="f-nome" type="text" required value="João Santos"
+                           class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary" />
+                    <p class="mt-1.5 text-xs text-ink-3">Como será exibido na plataforma, auditoria e tickets.</p>
+                  </div>
+                  <div class="xl:col-span-6">
+                    <label for="f-email" class="mb-1 block text-sm font-semibold">E-mail corporativo <span class="text-danger" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></label>
+                    <input id="f-email" type="email" required value="joao.santos@prestadora" aria-invalid="true" aria-describedby="f-email-erro"
+                           class="w-full rounded-xl border-2 border-danger bg-surface px-4 py-3 text-sm shadow-card outline-none" />
+                    <p id="f-email-erro" class="mt-1.5 text-xs font-semibold text-danger">✕ Informe um e-mail válido no domínio da organização (ex.: nome@prestadora-alfa.com).</p>
+                  </div>
+                  <div class="xl:col-span-4">
+                    <label for="f-cpf" class="mb-1 block text-sm font-semibold">Documento</label>
+                    <input id="f-cpf" type="text" value="123.456.789-00" class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary" />
+                    <p class="mt-1.5 text-xs text-ink-3">Exemplo visual de documento/identificador.</p>
+                  </div>
+                  <div class="xl:col-span-4">
+                    <label for="f-telefone" class="mb-1 block text-sm font-semibold">Telefone</label>
+                    <input id="f-telefone" type="text" value="(27) 99999-1234" class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary" />
+                  </div>
+                  <div class="xl:col-span-4">
+                    <label for="f-matricula" class="mb-1 block text-sm font-semibold">Matrícula</label>
+                    <input id="f-matricula" type="text" value="EDP-48120" readonly aria-readonly="true"
+                           class="w-full rounded-xl border border-stroke bg-bg-app px-4 py-3 text-sm text-ink-2 outline-none" />
+                    <p class="mt-1.5 text-xs text-ink-3">Somente leitura — gerada pelo sistema de RH.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="overflow-hidden rounded-xl border border-stroke bg-surface shadow-card">
+              <div class="border-b border-stroke px-5 py-4">
+                <p class="text-xs font-extrabold uppercase tracking-wide text-primary">Bloco 2</p>
+                <h3 class="mt-1 text-base font-extrabold text-marine">Organização, contrato e contexto operacional</h3>
+              </div>
+              <div class="grid gap-4 p-5 lg:grid-cols-12">
+                <div class="lg:col-span-4">
+                  <label for="f-org2" class="mb-1 block text-sm font-semibold">Organização <span class="text-danger" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></label>
+                  <select id="f-org2" required class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary">
+                    <option>Prestadora Alfa</option><option>Organização Interna</option><option>Consultoria Beta</option>
+                  </select>
+                </div>
+                <div class="lg:col-span-4">
+                  <label for="f-contrato" class="mb-1 block text-sm font-semibold">Contrato vinculado</label>
+                  <select id="f-contrato" class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary">
+                    <option>CT-2025-114 · vigente até 12/2026</option>
+                    <option>CT-2024-089 · vigente até 08/2026</option>
+                  </select>
+                </div>
+                <div class="lg:col-span-4">
+                  <label for="f-unidade" class="mb-1 block text-sm font-semibold">Unidade / contexto</label>
+                  <select id="f-unidade" class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary">
+                    <option>Espírito Santo</option><option>São Paulo</option><option>Corporativo</option>
+                  </select>
+                </div>
+                <div class="lg:col-span-6">
+                  <label for="f-gestor" class="mb-1 block text-sm font-semibold">Gestor responsável</label>
+                  <input id="f-gestor" type="text" value="Marina Alves" class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary" />
+                </div>
+                <div class="lg:col-span-6">
+                  <label for="f-vigencia" class="mb-1 block text-sm font-semibold">Validade do acesso</label>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <input id="f-vigencia" type="date" value="2026-12-31" class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary" />
+                    <label class="flex items-center justify-between rounded-xl border border-stroke bg-bg-app px-4 py-3 text-sm">
+                      <span>
+                        <span class="block font-semibold text-ink">Renovação assistida</span>
+                        <span class="text-xs text-ink-3">Notifica gestor 30 dias antes.</span>
+                      </span>
+                      <span class="relative inline-block h-6 w-11">
+                        <input type="checkbox" checked class="peer sr-only" />
+                        <span class="absolute inset-0 rounded-full bg-stroke-strong transition peer-checked:bg-primary" aria-hidden="true"></span>
+                        <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" aria-hidden="true"></span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <div class="lg:col-span-12">
+                  <label for="f-obs" class="mb-1 block text-sm font-semibold">Observações administrativas</label>
+                  <textarea id="f-obs" rows="4" class="w-full rounded-xl border border-stroke bg-surface px-4 py-3 text-sm shadow-card outline-none transition focus:border-primary" placeholder="Contexto adicional do vínculo, observações do gestor ou particularidades de acesso."></textarea>
+                </div>
+              </div>
+            </section>
+
+            <section class="overflow-hidden rounded-xl border border-stroke bg-surface shadow-card">
+              <div class="border-b border-stroke px-5 py-4">
+                <p class="text-xs font-extrabold uppercase tracking-wide text-primary">Bloco 3</p>
+                <h3 class="mt-1 text-base font-extrabold text-marine">Acessos, perfil e segurança</h3>
+              </div>
+              <div class="space-y-5 p-5">
+                <div>
+                  <p class="mb-2 text-sm font-semibold">Aplicações liberadas</p>
+                  <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <label class="group cursor-pointer rounded-xl border-2 border-primary bg-primary-soft p-4 shadow-card transition">
+                      <input type="checkbox" checked class="sr-only" />
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <p class="text-sm font-bold text-primary">SICODE Legacy ES</p>
+                          <p class="mt-1 text-xs text-ink-2">Operação de campo e análise ES.</p>
+                        </div>
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">✓</span>
+                      </div>
+                    </label>
+                    <label class="group cursor-pointer rounded-xl border border-stroke bg-surface p-4 shadow-card transition hover:border-primary">
+                      <input type="checkbox" class="sr-only" />
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <p class="text-sm font-bold text-ink">SICODE Legacy SP</p>
+                          <p class="mt-1 text-xs text-ink-2">Operação e gestão SP.</p>
+                        </div>
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-stroke text-xs font-bold text-ink-3">+</span>
+                      </div>
+                    </label>
+                    <label class="group cursor-pointer rounded-xl border border-stroke bg-surface p-4 shadow-card transition hover:border-primary">
+                      <input type="checkbox" class="sr-only" />
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <p class="text-sm font-bold text-ink">SICODESK</p>
+                          <p class="mt-1 text-xs text-ink-2">Tickets, SLA e fila interna.</p>
+                        </div>
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-stroke text-xs font-bold text-ink-3">+</span>
+                      </div>
+                    </label>
+                    <label class="cursor-not-allowed rounded-xl border border-dashed border-stroke-strong bg-bg-app p-4">
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <p class="text-sm font-bold text-ink-2">SICODE 2.0</p>
+                          <p class="mt-1 text-xs text-ink-3">Em implantação.</p>
+                        </div>
+                        <span class="inline-flex items-center rounded-full border border-stroke bg-surface px-2 py-0.5 text-[11px] font-bold text-ink-3">Indisponível</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <p class="mb-2 text-sm font-semibold">Perfil de acesso</p>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                      <label class="cursor-pointer rounded-xl border border-stroke bg-surface p-4 shadow-card transition hover:border-primary">
+                        <input type="radio" name="perfil" class="sr-only" />
+                        <span class="block text-sm font-bold text-ink">Operacional</span>
+                        <span class="mt-1 block text-xs text-ink-2">Consulta, execução e atualização de atividades.</span>
+                      </label>
+                      <label class="cursor-pointer rounded-xl border-2 border-primary bg-primary-soft p-4 shadow-card">
+                        <input type="radio" name="perfil" checked class="sr-only" />
+                        <span class="block text-sm font-bold text-primary">Gestor</span>
+                        <span class="mt-1 block text-xs text-ink-2">Indicadores, aprovações e supervisão do time.</span>
+                      </label>
+                      <label class="cursor-pointer rounded-xl border border-stroke bg-surface p-4 shadow-card transition hover:border-primary">
+                        <input type="radio" name="perfil" class="sr-only" />
+                        <span class="block text-sm font-bold text-ink">Administrador</span>
+                        <span class="mt-1 block text-xs text-ink-2">Gestão de usuários e acesso institucional.</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-2 text-sm font-semibold">Preferências de segurança</p>
+                    <div class="space-y-3">
+                      <label class="flex items-center justify-between rounded-xl border border-stroke bg-bg-app px-4 py-3 text-sm shadow-card">
+                        <span>
+                          <span class="block font-semibold text-ink">Troca de senha no primeiro acesso</span>
+                          <span class="text-xs text-ink-3">Recomendado para usuários novos.</span>
+                        </span>
+                        <span class="relative inline-block h-6 w-11">
+                          <input type="checkbox" checked class="peer sr-only" />
+                          <span class="absolute inset-0 rounded-full bg-stroke-strong transition peer-checked:bg-primary" aria-hidden="true"></span>
+                          <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" aria-hidden="true"></span>
+                        </span>
+                      </label>
+                      <label class="flex items-center justify-between rounded-xl border border-stroke bg-bg-app px-4 py-3 text-sm shadow-card">
+                        <span>
+                          <span class="block font-semibold text-ink">Notificar gestor sobre alterações</span>
+                          <span class="text-xs text-ink-3">Envia resumo do cadastro e mudanças futuras.</span>
+                        </span>
+                        <span class="relative inline-block h-6 w-11">
+                          <input type="checkbox" checked class="peer sr-only" />
+                          <span class="absolute inset-0 rounded-full bg-stroke-strong transition peer-checked:bg-primary" aria-hidden="true"></span>
+                          <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" aria-hidden="true"></span>
+                        </span>
+                      </label>
+                      <label class="flex items-center justify-between rounded-xl border border-stroke bg-bg-app px-4 py-3 text-sm shadow-card">
+                        <span>
+                          <span class="block font-semibold text-ink">MFA recomendado</span>
+                          <span class="text-xs text-ink-3">Marcador visual para futuros fatores de autenticação.</span>
+                        </span>
+                        <span class="relative inline-block h-6 w-11">
+                          <input type="checkbox" class="peer sr-only" />
+                          <span class="absolute inset-0 rounded-full bg-stroke-strong transition peer-checked:bg-primary" aria-hidden="true"></span>
+                          <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" aria-hidden="true"></span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="overflow-hidden rounded-xl border border-stroke bg-surface shadow-card">
+              <div class="border-b border-stroke px-5 py-4">
+                <p class="text-xs font-extrabold uppercase tracking-wide text-primary">Bloco 4</p>
+                <h3 class="mt-1 text-base font-extrabold text-marine">Revisão, confirmação e ações</h3>
+              </div>
+              <div class="space-y-4 p-5">
+                <div class="grid gap-4 lg:grid-cols-2">
+                  <div class="rounded-xl border border-success bg-success-soft p-4">
+                    <p class="text-sm font-bold text-success">✓ Pronto para envio</p>
+                    <p class="mt-1 text-sm text-ink-2">Os dados principais estão consistentes. Falta apenas corrigir o e-mail antes de enviar o convite.</p>
+                  </div>
+                  <div class="rounded-xl border border-warning bg-warning-soft p-4">
+                    <p class="text-sm font-bold text-warning">▲ Requer confirmação</p>
+                    <p class="mt-1 text-sm text-ink-2">A concessão ao Legacy ES e o perfil Gestor devem ser confirmados antes do envio.</p>
+                  </div>
+                </div>
+
+                <label class="flex items-start gap-3 rounded-xl border border-stroke bg-bg-app px-4 py-3 text-sm shadow-card">
+                  <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-stroke-strong text-primary" />
+                  <span>
+                    <span class="block font-semibold text-ink">Confirmo que os dados e acessos foram revisados.</span>
+                    <span class="text-xs text-ink-3">A confirmação visual antecede a ação final, que pode ainda abrir modal de confirmação para ações sensíveis.</span>
+                  </span>
+                </label>
+
+                <div class="rounded-xl border border-dashed border-stroke-strong bg-bg-app p-4">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-bold text-ink">Confirmadores de ação</p>
+                      <p class="mt-1 text-xs text-ink-2">Exemplo de padrão: ações críticas chamam modal/drawer de confirmação. Use o mesmo componente do catálogo global.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <button type="button" data-open="modal-confirm" class="rounded-md border border-primary px-3 py-2 text-sm font-semibold text-primary hover:bg-primary-soft">Prévia de confirmação</button>
+                      <button type="button" data-open="modal-destroy" class="rounded-md border border-danger px-3 py-2 text-sm font-semibold text-danger hover:bg-danger-soft">Prévia destrutiva</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sticky bottom-3 z-10 rounded-2xl border border-stroke-strong bg-surface-2 px-4 py-3 shadow-raised">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="rounded-md px-4 py-2 text-sm font-semibold text-ink-2 hover:bg-bg-app">Cancelar</button>
+                    <button type="button" class="rounded-md border border-stroke bg-surface px-4 py-2 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Salvar rascunho</button>
+                    <button type="button" class="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-soft">Pré-visualizar convite</button>
+                    <button type="submit" class="ml-auto rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Salvar e enviar convite</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </form>
+
+          <aside class="space-y-5">
+            <div class="rounded-xl border border-stroke bg-surface p-5 shadow-card">
+              <h3 class="text-sm font-extrabold uppercase tracking-wide text-marine">Resumo lateral</h3>
+              <dl class="mt-4 space-y-3 text-sm">
+                <div class="flex items-start justify-between gap-3"><dt class="text-ink-3">Organização</dt><dd class="text-right font-semibold text-ink">Prestadora Alfa</dd></div>
+                <div class="flex items-start justify-between gap-3"><dt class="text-ink-3">Contrato</dt><dd class="text-right font-semibold text-ink">CT-2025-114</dd></div>
+                <div class="flex items-start justify-between gap-3"><dt class="text-ink-3">Contexto</dt><dd class="text-right font-semibold text-ink">ES</dd></div>
+                <div class="flex items-start justify-between gap-3"><dt class="text-ink-3">Perfil</dt><dd class="text-right font-semibold text-ink">Gestor</dd></div>
+                <div class="flex items-start justify-between gap-3"><dt class="text-ink-3">Aplicações</dt><dd class="text-right font-semibold text-ink">Legacy ES</dd></div>
+              </dl>
+            </div>
+
+            <div class="rounded-xl border border-stroke bg-surface p-5 shadow-card">
+              <h3 class="text-sm font-extrabold uppercase tracking-wide text-marine">Checklist visual</h3>
+              <ul class="mt-3 space-y-2 text-sm text-ink-2">
+                <li class="flex items-start gap-2"><span class="mt-0.5 text-success">✓</span><span>Labels sempre visíveis.</span></li>
+                <li class="flex items-start gap-2"><span class="mt-0.5 text-success">✓</span><span>Campos agrupados por intenção e hierarquia.</span></li>
+                <li class="flex items-start gap-2"><span class="mt-0.5 text-success">✓</span><span>Estados de erro, aviso e sucesso visíveis.</span></li>
+                <li class="flex items-start gap-2"><span class="mt-0.5 text-success">✓</span><span>Ações importantes separadas de ações destrutivas.</span></li>
+                <li class="flex items-start gap-2"><span class="mt-0.5 text-warning">▲</span><span>Confirmação final recomendada para envio e suspensão.</span></li>
+              </ul>
+            </div>
+
+            <div class="rounded-xl border border-stroke bg-surface p-5 shadow-card">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="text-sm font-extrabold uppercase tracking-wide text-marine">Toasts de referência</h3>
+                <button type="button" class="rounded-md border border-stroke px-2.5 py-1 text-xs font-semibold text-ink-2 hover:bg-primary-soft">Empilhar</button>
+              </div>
+              <div class="mt-4 space-y-3">
+                <div class="rounded-xl border border-success bg-surface p-3 shadow-card">
+                  <div class="flex items-start gap-3">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-success-soft text-success">✓</span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-bold text-success">Usuário salvo</p>
+                      <p class="mt-0.5 text-xs text-ink-2">João Santos foi atualizado com sucesso.</p>
+                    </div>
+                    <button type="button" class="text-ink-3 hover:text-ink" aria-label="Fechar toast de sucesso">✕</button>
+                  </div>
+                </div>
+                <div class="rounded-xl border border-info bg-surface p-3 shadow-card">
+                  <div class="flex items-start gap-3">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-info-soft text-info">i</span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-bold text-info">Convite agendado</p>
+                      <p class="mt-0.5 text-xs text-ink-2">O e-mail será enviado após aprovação do gestor.</p>
+                    </div>
+                    <button type="button" class="text-ink-3 hover:text-ink" aria-label="Fechar toast informativo">✕</button>
+                  </div>
+                </div>
+                <div class="rounded-xl border border-warning bg-surface p-3 shadow-card">
+                  <div class="flex items-start gap-3">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-warning-soft text-warning">▲</span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-bold text-warning">Contrato perto do vencimento</p>
+                      <p class="mt-0.5 text-xs text-ink-2">O acesso expira em 45 dias se não houver renovação.</p>
+                    </div>
+                    <button type="button" class="text-ink-3 hover:text-ink" aria-label="Fechar toast de aviso">✕</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-danger bg-danger-soft p-5 shadow-card">
+              <h3 class="text-sm font-extrabold uppercase tracking-wide text-danger">Ação destrutiva separada</h3>
+              <p class="mt-2 text-sm text-ink-2">Ações como exclusão ou suspensão não devem competir visualmente com salvar/enviar. Devem ficar isoladas e exigir confirmação secundária.</p>
+              <button type="button" data-open="modal-destroy" class="mt-4 w-full rounded-md border border-danger bg-surface px-4 py-2 text-sm font-semibold text-danger hover:bg-danger-soft">Suspender usuário</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           5. CATÁLOGO DE COMPONENTES
+           ================================================================ -->
+      <section id="componentes" aria-labelledby="h-comp" class="scroll-mt-24">
+        <h2 id="h-comp" class="text-xl font-extrabold tracking-tight text-marine">Catálogo de componentes</h2>
+        <p class="mb-4 text-sm text-ink-2">Blocos de referência — variantes e estados que qualquer tela do ecossistema deve reutilizar.</p>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+
+          <!-- Botões -->
+          <div class="rounded-lg border border-stroke bg-surface p-5 shadow-card">
+            <h3 class="mb-3 text-sm font-extrabold uppercase tracking-wide text-marine">Botões</h3>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Primário</button>
+              <button type="button" class="rounded-md border border-stroke bg-surface px-4 py-2 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Secundário</button>
+              <button type="button" class="rounded-md px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-soft">Terciário</button>
+              <button type="button" class="rounded-md bg-danger px-4 py-2 text-sm font-semibold text-white hover:opacity-90">Destrutivo</button>
+              <button type="button" aria-label="Configurações" class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-stroke text-ink-2 hover:bg-primary-soft">⚙</button>
+              <button type="button" disabled aria-busy="true" class="inline-flex items-center gap-2 rounded-md bg-primary/70 px-4 py-2 text-sm font-semibold text-white cursor-wait"><span class="spinner" aria-hidden="true"></span> Loading</button>
+              <button type="button" disabled aria-disabled="true" class="cursor-not-allowed rounded-md bg-disabled-bg px-4 py-2 text-sm font-semibold text-disabled-ink">Disabled</button>
+            </div>
+          </div>
+
+          <!-- Badges -->
+          <div class="rounded-lg border border-stroke bg-surface p-5 shadow-card">
+            <h3 class="mb-3 text-sm font-extrabold uppercase tracking-wide text-marine">Badges — sempre ícone/texto + cor</h3>
+            <div class="flex flex-wrap gap-2 text-[11px] font-bold">
+              <span class="rounded-full border border-stroke bg-bg-app px-2.5 py-1 text-ink-2">Neutro</span>
+              <span class="rounded-full border border-info bg-info-soft px-2.5 py-1 text-info">i Informativo</span>
+              <span class="rounded-full border border-success bg-success-soft px-2.5 py-1 text-success">✓ Positivo</span>
+              <span class="rounded-full border border-warning bg-warning-soft px-2.5 py-1 text-warning">▲ Atenção</span>
+              <span class="rounded-full border border-danger bg-danger-soft px-2.5 py-1 text-danger">✕ Negativo</span>
+              <span class="rounded-full border border-stroke bg-disabled-bg px-2.5 py-1 text-disabled-ink">— Desabilitado</span>
+            </div>
+          </div>
+
+          <!-- Alertas -->
+          <div class="rounded-lg border border-stroke bg-surface p-5 shadow-card lg:col-span-2">
+            <h3 class="mb-3 text-sm font-extrabold uppercase tracking-wide text-marine">Alertas</h3>
+            <div class="grid gap-2 md:grid-cols-2">
+              <div class="flex gap-2.5 rounded-lg border border-info bg-info-soft px-3.5 py-2.5 text-sm" role="note">
+                <span class="font-bold text-info" aria-hidden="true">i</span>
+                <p><span class="font-bold text-info">Informação.</span> <span class="text-ink-2">A sincronização com o RH ocorre a cada 6 horas.</span></p>
+              </div>
+              <div class="flex gap-2.5 rounded-lg border border-success bg-success-soft px-3.5 py-2.5 text-sm" role="status">
+                <span class="font-bold text-success" aria-hidden="true">✓</span>
+                <p><span class="font-bold text-success">Sucesso.</span> <span class="text-ink-2">Usuário João Santos cadastrado. Convite enviado por e-mail.</span></p>
+              </div>
+              <div class="flex gap-2.5 rounded-lg border border-warning bg-warning-soft px-3.5 py-2.5 text-sm" role="status">
+                <span class="font-bold text-warning" aria-hidden="true">▲</span>
+                <p><span class="font-bold text-warning">Atenção.</span> <span class="text-ink-2">4 contratos expiram em 30 dias — revise os acessos vinculados.</span></p>
+              </div>
+              <div class="flex gap-2.5 rounded-lg border border-danger bg-danger-soft px-3.5 py-2.5 text-sm" role="alert">
+                <span class="font-bold text-danger" aria-hidden="true">✕</span>
+                <p><span class="font-bold text-danger">Erro.</span> <span class="text-ink-2">Falha ao suspender o acesso (código 409). O usuário possui atividades em andamento.</span></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inputs -->
+          <div class="rounded-lg border border-stroke bg-surface p-5 shadow-card">
+            <h3 class="mb-3 text-sm font-extrabold uppercase tracking-wide text-marine">Inputs</h3>
+            <div class="space-y-3">
+              <div>
+                <label for="i-padrao" class="mb-1 block text-sm font-semibold">Padrão</label>
+                <input id="i-padrao" type="text" class="w-full rounded-md border border-stroke px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label for="i-foco" class="mb-1 block text-sm font-semibold">Foco (clique para ver o anel)</label>
+                <input id="i-foco" type="text" placeholder="Tab / clique aqui" class="w-full rounded-md border border-stroke px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label for="i-erro" class="mb-1 block text-sm font-semibold">Com erro</label>
+                <input id="i-erro" type="text" value="valor inválido" aria-invalid="true" aria-describedby="i-erro-msg" class="w-full rounded-md border-2 border-danger px-3 py-2 text-sm" />
+                <p id="i-erro-msg" class="mt-1 text-xs font-semibold text-danger">✕ Este campo aceita apenas números.</p>
+              </div>
+              <div>
+                <label for="i-dis" class="mb-1 block text-sm font-semibold">Desabilitado</label>
+                <input id="i-dis" type="text" value="—" disabled class="w-full cursor-not-allowed rounded-md border border-stroke bg-disabled-bg px-3 py-2 text-sm text-disabled-ink" />
+              </div>
+              <div>
+                <label for="i-ro" class="mb-1 block text-sm font-semibold">Somente leitura</label>
+                <input id="i-ro" type="text" value="EDP-48120" readonly class="w-full rounded-md border border-stroke bg-bg-app px-3 py-2 text-sm text-ink-2" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards -->
+          <div class="rounded-lg border border-stroke bg-surface p-5 shadow-card">
+            <h3 class="mb-3 text-sm font-extrabold uppercase tracking-wide text-marine">Cards</h3>
+            <div class="grid gap-2.5 sm:grid-cols-2">
+              <div class="rounded-lg border border-stroke bg-surface p-3 shadow-card">
+                <p class="text-sm font-bold">Padrão</p><p class="text-xs text-ink-2">Superfície neutra de conteúdo.</p>
+              </div>
+              <div class="rounded-lg border-2 border-primary bg-primary-soft p-3">
+                <p class="text-sm font-bold text-primary">✓ Selecionado</p><p class="text-xs text-ink-2">Borda + fundo + marcador.</p>
+              </div>
+              <div class="rounded-lg border border-stroke bg-surface p-3 shadow-card">
+                <p class="text-sm font-bold">Com ação</p>
+                <button type="button" class="mt-1 text-xs font-semibold text-primary hover:underline">Abrir detalhes →</button>
+              </div>
+              <div class="rounded-lg border border-stroke bg-surface p-3 shadow-raised" style="box-shadow: inset 0 3px 0 var(--sc-accent), 0 4px 16px rgba(16,24,64,.10)">
+                <p class="text-sm font-bold">Com destaque</p><p class="text-xs text-ink-2">Filete superior em Electric Green.</p>
+              </div>
+              <div class="rounded-lg border border-stroke bg-surface p-3 shadow-card sm:col-span-2">
+                <div class="flex items-center justify-between">
+                  <p class="text-sm font-bold">Com status</p>
+                  <span class="rounded-full border border-warning bg-warning-soft px-2 py-0.5 text-[11px] font-bold text-warning">▲ Pendente</span>
+                </div>
+                <p class="text-xs text-ink-2">Estado sempre com texto, nunca apenas cor.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feedback -->
+          <div class="rounded-lg border border-stroke bg-surface p-5 shadow-card">
+            <h3 class="mb-3 text-sm font-extrabold uppercase tracking-wide text-marine">Feedback</h3>
+            <div class="space-y-3 text-sm">
+              <p class="inline-flex items-center gap-2 font-semibold text-ink-2"><span class="spinner text-primary" aria-hidden="true"></span> Carregando dados…</p>
+              <div class="space-y-1.5"><div class="skeleton h-3.5 w-2/3"></div><div class="skeleton h-3.5 w-full"></div><div class="skeleton h-3.5 w-1/2"></div></div>
+              <p class="rounded-md border border-dashed border-stroke-strong bg-bg-app px-3 py-2 text-ink-2"><span class="font-semibold">Empty state:</span> nada por aqui ainda — cadastre o primeiro item.</p>
+              <p class="rounded-md border border-danger bg-danger-soft px-3 py-2 font-semibold text-danger" role="alert">✕ Erro ao salvar. Verifique a conexão e tente novamente.</p>
+              <p class="rounded-md border border-success bg-success-soft px-3 py-2 font-semibold text-success" role="status">✓ Alterações salvas.</p>
+            </div>
+          </div>
+
+          <!-- Navegação -->
+          <div class="rounded-lg border border-stroke bg-surface p-5 shadow-card lg:col-span-2">
+            <h3 class="mb-3 text-sm font-extrabold uppercase tracking-wide text-marine">Navegação</h3>
+
+            <!-- Tabs -->
+            <div role="tablist" aria-label="Exemplo de tabs" class="flex gap-1 border-b border-stroke text-sm">
+              <button role="tab" aria-selected="true" id="tab-1" aria-controls="panel-1"
+                      class="tab-btn -mb-px border-b-2 border-primary px-3.5 py-2 font-bold text-primary">Detalhes</button>
+              <button role="tab" aria-selected="false" id="tab-2" aria-controls="panel-2" tabindex="-1"
+                      class="tab-btn -mb-px border-b-2 border-transparent px-3.5 py-2 font-semibold text-ink-2 hover:text-primary">Acessos</button>
+              <button role="tab" aria-selected="false" id="tab-3" aria-controls="panel-3" tabindex="-1"
+                      class="tab-btn -mb-px border-b-2 border-transparent px-3.5 py-2 font-semibold text-ink-2 hover:text-primary">Auditoria</button>
+            </div>
+            <div id="panel-1" role="tabpanel" aria-labelledby="tab-1" class="py-3 text-sm text-ink-2">Conteúdo da aba <span class="font-semibold">Detalhes</span> — informações gerais do registro.</div>
+            <div id="panel-2" role="tabpanel" aria-labelledby="tab-2" class="py-3 text-sm text-ink-2" hidden>Conteúdo da aba <span class="font-semibold">Acessos</span> — aplicações e perfis concedidos.</div>
+            <div id="panel-3" role="tabpanel" aria-labelledby="tab-3" class="py-3 text-sm text-ink-2" hidden>Conteúdo da aba <span class="font-semibold">Auditoria</span> — trilha de eventos do registro.</div>
+
+            <div class="mt-3 flex flex-wrap items-center gap-6">
+              <!-- Breadcrumb exemplo -->
+              <nav aria-label="Exemplo de breadcrumb">
+                <ol class="flex items-center gap-1.5 text-xs text-ink-3">
+                  <li><a href="#" class="hover:text-primary hover:underline">Usuários</a></li>
+                  <li aria-hidden="true">/</li>
+                  <li><a href="#" class="hover:text-primary hover:underline">Prestadora Alfa</a></li>
+                  <li aria-hidden="true">/</li>
+                  <li aria-current="page" class="font-semibold text-ink-2">João Santos</li>
+                </ol>
+              </nav>
+              <!-- Dropdown exemplo -->
+              <div class="relative">
+                <button type="button" data-menu-button aria-expanded="false" aria-controls="menu-demo"
+                        class="rounded-md border border-stroke px-3 py-1.5 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Dropdown ▾</button>
+                <div id="menu-demo" hidden role="menu" class="absolute left-0 z-10 mt-1 w-44 rounded-lg border border-stroke bg-surface-2 p-1 shadow-raised text-sm">
+                  <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Opção A</a>
+                  <a href="#" role="menuitem" class="block rounded-md px-2.5 py-1.5 hover:bg-primary-soft">Opção B</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           6. MODAL E DRAWER
+           ================================================================ -->
+      <section id="modais" aria-labelledby="h-modal" class="scroll-mt-24">
+        <h2 id="h-modal" class="text-xl font-extrabold tracking-tight text-marine">Modal e drawer</h2>
+        <p class="mb-4 text-sm text-ink-2">Demonstrações funcionais — Esc fecha, foco vai para o diálogo ao abrir e retorna ao gatilho ao fechar. Ação primária à direita; ação destrutiva nunca é a primeira em foco.</p>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-open="modal-confirm" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Abrir modal de confirmação</button>
+          <button type="button" data-open="modal-destroy" class="rounded-md border border-danger px-4 py-2 text-sm font-semibold text-danger hover:bg-danger-soft">Abrir modal destrutivo</button>
+          <button type="button" data-open="drawer-detalhes" class="rounded-md border border-stroke bg-surface px-4 py-2 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Abrir drawer de detalhes</button>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           7. ESTADOS DE NEGÓCIO → INTENÇÕES VISUAIS
+           ================================================================ -->
+      <section id="estados" aria-labelledby="h-estados" class="scroll-mt-24">
+        <h2 id="h-estados" class="text-xl font-extrabold tracking-tight text-marine">Estados de negócio → intenções visuais</h2>
+        <p class="mb-4 text-sm text-ink-2">O design system define <span class="font-semibold">intenções</span> (positivo, neutro, informativo, atenção, negativo, desabilitado). Os nomes de domínio abaixo são exemplos de mapeamento — não fazem parte rígida do sistema.</p>
+
+        <div class="scroll-x rounded-lg border border-stroke bg-surface shadow-card">
+          <table class="w-full min-w-[640px] text-left text-sm">
+            <caption class="sr-only">Mapeamento entre estados de domínio e intenções visuais</caption>
+            <thead class="border-b border-stroke bg-bg-app text-xs uppercase tracking-wide text-ink-2">
+              <tr><th scope="col" class="px-4 py-2.5">Estado de domínio (exemplo)</th><th scope="col" class="px-4 py-2.5">Intenção visual</th><th scope="col" class="px-4 py-2.5">Representação</th></tr>
+            </thead>
+            <tbody class="divide-y divide-stroke">
+              <tr><td class="px-4 py-2.5 font-semibold">Ativo · Concluído</td><td class="px-4 py-2.5">Positivo</td>
+                <td class="px-4 py-2.5"><span class="rounded-full border border-success bg-success-soft px-2.5 py-0.5 text-[11px] font-bold text-success">✓ Positivo</span></td></tr>
+              <tr><td class="px-4 py-2.5 font-semibold">Em análise</td><td class="px-4 py-2.5">Informativo</td>
+                <td class="px-4 py-2.5"><span class="rounded-full border border-info bg-info-soft px-2.5 py-0.5 text-[11px] font-bold text-info">i Informativo</span></td></tr>
+              <tr><td class="px-4 py-2.5 font-semibold">Pendente · Expirado (a vencer)</td><td class="px-4 py-2.5">Atenção</td>
+                <td class="px-4 py-2.5"><span class="rounded-full border border-warning bg-warning-soft px-2.5 py-0.5 text-[11px] font-bold text-warning">▲ Atenção</span></td></tr>
+              <tr><td class="px-4 py-2.5 font-semibold">Suspenso · Bloqueado</td><td class="px-4 py-2.5">Negativo</td>
+                <td class="px-4 py-2.5"><span class="rounded-full border border-danger bg-danger-soft px-2.5 py-0.5 text-[11px] font-bold text-danger">✕ Negativo</span></td></tr>
+              <tr><td class="px-4 py-2.5 font-semibold">Cancelado (histórico)</td><td class="px-4 py-2.5">Neutro</td>
+                <td class="px-4 py-2.5"><span class="rounded-full border border-stroke bg-bg-app px-2.5 py-0.5 text-[11px] font-bold text-ink-2">Neutro</span></td></tr>
+              <tr><td class="px-4 py-2.5 font-semibold">Indisponível · Em implantação</td><td class="px-4 py-2.5">Desabilitado</td>
+                <td class="px-4 py-2.5"><span class="rounded-full border border-stroke bg-disabled-bg px-2.5 py-0.5 text-[11px] font-bold text-disabled-ink">— Desabilitado</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           8. SICODESK — MESMA IDENTIDADE, OUTRA OPERAÇÃO
+           ================================================================ -->
+      <section id="sicodesk" aria-labelledby="h-desk" class="scroll-mt-24">
+        <h2 id="h-desk" class="text-xl font-extrabold tracking-tight text-marine">SICODESK — fila de tickets</h2>
+        <p class="mb-4 text-sm text-ink-2">Mesmos tokens, tipografia e componentes aplicados a uma aplicação operacional distinta.</p>
+
+        <!-- Ticket crítico em destaque -->
+        <div class="mb-3 flex flex-wrap items-center gap-3 rounded-lg border-2 border-danger bg-danger-soft px-4 py-3 text-sm" role="alert">
+          <span class="rounded-full bg-danger px-2.5 py-0.5 text-[11px] font-bold text-white">CRÍTICO</span>
+          <span class="font-bold text-danger">#4821 · Indisponibilidade do Legacy SP para prestadoras</span>
+          <span class="text-ink-2">SLA estourado há <span class="font-bold text-danger">42 min</span> · Fila N2 · Resp.: Marina Alves</span>
+          <button type="button" class="ml-auto rounded-md bg-danger px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90">Assumir ticket</button>
+        </div>
+
+        <div class="scroll-x rounded-lg border border-stroke bg-surface shadow-card">
+          <table class="w-full min-w-[820px] text-left text-sm">
+            <caption class="sr-only">Fila de tickets do SICODESK</caption>
+            <thead class="border-b border-stroke bg-bg-app text-xs uppercase tracking-wide text-ink-2">
+              <tr>
+                <th scope="col" class="px-4 py-2.5">Ticket</th><th scope="col" class="px-3 py-2.5">Prioridade</th>
+                <th scope="col" class="px-3 py-2.5">Categoria</th><th scope="col" class="px-3 py-2.5">Responsável</th>
+                <th scope="col" class="px-3 py-2.5">SLA</th><th scope="col" class="px-3 py-2.5">Aberto há</th>
+                <th scope="col" class="px-3 py-2.5">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stroke">
+              <tr class="hover:bg-primary-soft/40">
+                <td class="px-4 py-2.5"><span class="font-bold text-primary">#4823</span> <span class="text-ink-2">Erro ao anexar laudo na OV</span></td>
+                <td class="px-3 py-2.5"><span class="rounded-full border border-warning bg-warning-soft px-2 py-0.5 text-[11px] font-bold text-warning">▲ Alta</span></td>
+                <td class="px-3 py-2.5">Legacy ES</td>
+                <td class="px-3 py-2.5">Ana Souza</td>
+                <td class="px-3 py-2.5"><span class="font-semibold text-warning">1 h 12 min restantes</span></td>
+                <td class="px-3 py-2.5 tabular-nums text-ink-2">2 h 48 min</td>
+                <td class="px-3 py-2.5"><span class="rounded-full border border-info bg-info-soft px-2 py-0.5 text-[11px] font-bold text-info">i Em atendimento</span></td>
+              </tr>
+              <tr class="hover:bg-primary-soft/40">
+                <td class="px-4 py-2.5"><span class="font-bold text-primary">#4820</span> <span class="text-ink-2">Solicitação de acesso — Consultoria Beta</span></td>
+                <td class="px-3 py-2.5"><span class="rounded-full border border-stroke bg-bg-app px-2 py-0.5 text-[11px] font-bold text-ink-2">Média</span></td>
+                <td class="px-3 py-2.5">Acessos</td>
+                <td class="px-3 py-2.5 text-ink-3">Sem responsável</td>
+                <td class="px-3 py-2.5"><span class="font-semibold text-success">6 h restantes</span></td>
+                <td class="px-3 py-2.5 tabular-nums text-ink-2">55 min</td>
+                <td class="px-3 py-2.5"><span class="rounded-full border border-warning bg-warning-soft px-2 py-0.5 text-[11px] font-bold text-warning">◷ Aguardando triagem</span></td>
+              </tr>
+              <tr class="hover:bg-primary-soft/40">
+                <td class="px-4 py-2.5"><span class="font-bold text-primary">#4815</span> <span class="text-ink-2">Dúvida sobre relatório de indicadores</span></td>
+                <td class="px-3 py-2.5"><span class="rounded-full border border-stroke bg-bg-app px-2 py-0.5 text-[11px] font-bold text-ink-2">Baixa</span></td>
+                <td class="px-3 py-2.5">SICODESK</td>
+                <td class="px-3 py-2.5">João Santos</td>
+                <td class="px-3 py-2.5"><span class="font-semibold text-success">Dentro do prazo</span></td>
+                <td class="px-3 py-2.5 tabular-nums text-ink-2">1 dia 3 h</td>
+                <td class="px-3 py-2.5"><span class="rounded-full border border-success bg-success-soft px-2 py-0.5 text-[11px] font-bold text-success">✓ Resolvido</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           9. PALETA PROPOSTA
+           ================================================================ -->
+      <section id="paleta" aria-labelledby="h-paleta" class="scroll-mt-24">
+        <h2 id="h-paleta" class="text-xl font-extrabold tracking-tight text-marine">Paleta proposta — tokens semânticos</h2>
+        <p class="mb-4 text-sm text-ink-2">Derivada da família cromática do brand EDP (Marine Blue, Cobalt Blue, Electric Green). <span class="font-semibold">Os hex exatos devem ser validados contra brand.edp.com antes da formalização.</span> Componentes referenciam tokens, nunca hex.</p>
+
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <!-- Cada amostra: cor, nome do token, uso, texto recomendado -->
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-marine)"><p class="px-3 py-2 text-sm font-bold text-white">Texto branco #FFFFFF</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-marine · #212E5E</p><p class="text-ink-2">Marine Blue — sidebar, títulos fortes, identidade.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-primary)"><p class="px-3 py-2 text-sm font-bold text-white">Texto branco #FFFFFF</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-primary · #263CC8</p><p class="text-ink-2">Cobalt Blue — ação primária, links, foco, seleção.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-accent)"><p class="px-3 py-2 text-sm font-bold" style="color:var(--sc-marine)">Texto marine #212E5E</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-accent · #28FF52</p><p class="text-ink-2">Electric Green — acento de marca (marcadores, filetes). Nunca texto nem único sinal de estado.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14 border-b border-stroke" style="background:var(--sc-bg-app)"><p class="px-3 py-2 text-sm font-bold" style="color:var(--sc-text)">Texto ink #1B2547</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-bg-app · #F3F5FA</p><p class="text-ink-2">Fundo principal da aplicação.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14 border-b border-stroke" style="background:var(--sc-surface)"><p class="px-3 py-2 text-sm font-bold" style="color:var(--sc-text)">Texto ink #1B2547</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-surface · #FFFFFF</p><p class="text-ink-2">Superfícies (cards, tabelas). Elevadas usam o mesmo tom + sombra.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-border)"><p class="px-3 py-2 text-sm font-bold" style="color:var(--sc-text)">Texto ink #1B2547</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-border · #DCE1EE</p><p class="text-ink-2">Bordas e divisores (forte: #B8C0D9).</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-text)"><p class="px-3 py-2 text-sm font-bold text-white">Texto branco #FFFFFF</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-text · #1B2547</p><p class="text-ink-2">Texto principal. Secundário #4E5878 · discreto #7C86A6.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-success)"><p class="px-3 py-2 text-sm font-bold text-white">Texto branco #FFFFFF</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-success · #0E7A3D</p><p class="text-ink-2">Sucesso. Fundo suave #E5F5EB com texto na própria cor.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-warning)"><p class="px-3 py-2 text-sm font-bold text-white">Texto branco #FFFFFF</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-warning · #925B00</p><p class="text-ink-2">Aviso. Fundo suave #FDF3DC com texto na própria cor.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-danger)"><p class="px-3 py-2 text-sm font-bold text-white">Texto branco #FFFFFF</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-danger · #B3261E</p><p class="text-ink-2">Erro / destrutivo. Fundo suave #FBEAE9.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-info)"><p class="px-3 py-2 text-sm font-bold text-white">Texto branco #FFFFFF</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-info · #1D5FB8</p><p class="text-ink-2">Informação. Fundo suave #E8F0FB.</p></div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-stroke bg-surface shadow-card">
+            <div class="h-14" style="background:var(--sc-disabled-bg)"><p class="px-3 py-2 text-sm font-bold" style="color:var(--sc-disabled-text)">Texto desabilitado #9AA2BC</p></div>
+            <div class="p-3 text-xs"><p class="font-bold">--sc-disabled-bg · #EDEFF6</p><p class="text-ink-2">Estado desabilitado — sempre acompanhado de cursor e aria.</p></div>
+          </div>
+        </div>
+        <p class="mt-3 text-xs text-ink-3">Foco: anel de 2px em <span class="font-semibold">#263CC8</span> com offset de 2px, aplicado globalmente via <code class="rounded bg-surface px-1">:focus-visible</code>.</p>
+      </section>
+
+      <!-- ================================================================
+           10. TIPOGRAFIA
+           ================================================================ -->
+      <section id="tipografia" aria-labelledby="h-tipo" class="scroll-mt-24">
+        <h2 id="h-tipo" class="text-xl font-extrabold tracking-tight text-marine">Tipografia — Mulish</h2>
+        <p class="mb-4 text-sm text-ink-2">Quatro pesos funcionais: 400 (corpo), 600 (semibold — labels e ênfase leve), 700 (bold — títulos de componente e dados-chave), 800 (extrabold — títulos de página e métricas).</p>
+
+        <div class="space-y-4 rounded-lg border border-stroke bg-surface p-5 shadow-card">
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-stroke pb-3">
+            <p class="text-2xl font-extrabold tracking-tight text-marine">Título principal (H1)</p>
+            <p class="text-xs text-ink-3">24px · extrabold 800 · tracking-tight · cor marine</p>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-stroke pb-3">
+            <p class="text-xl font-extrabold tracking-tight text-marine">Título de seção (H2)</p>
+            <p class="text-xs text-ink-3">20px · extrabold 800</p>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-stroke pb-3">
+            <p class="text-base font-bold">Subtítulo / título de card (H3)</p>
+            <p class="text-xs text-ink-3">16px · bold 700</p>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-stroke pb-3">
+            <p class="text-sm">Corpo de texto para leitura em telas densas.</p>
+            <p class="text-xs text-ink-3">14px · regular 400 · texto auxiliar em #4E5878</p>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-stroke pb-3">
+            <p class="text-sm font-semibold">Label de formulário</p>
+            <p class="text-xs text-ink-3">14px · semibold 600</p>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-stroke pb-3">
+            <p class="text-xs uppercase tracking-wide text-ink-2 font-semibold">Cabeçalho de tabela / eyebrow</p>
+            <p class="text-xs text-ink-3">12px · semibold 600 · uppercase · tracking-wide</p>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-stroke pb-3">
+            <p class="text-xs text-ink-3">Caption e metadados discretos</p>
+            <p class="text-xs text-ink-3">12px · regular 400 · #7C86A6</p>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-stroke pb-3">
+            <p class="text-2xl font-extrabold tabular-nums">1.284</p>
+            <p class="text-xs text-ink-3">Métrica · 24px · extrabold 800 · tabular-nums (alinhamento numérico)</p>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+            <span class="rounded-full border border-success bg-success-soft px-2.5 py-0.5 text-[11px] font-bold text-success">✓ Badge</span>
+            <p class="text-xs text-ink-3">11px · bold 700</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           11. TEMA ESCURO — ESTRATÉGIA DE TOKENS
+           ================================================================ -->
+      <section id="tema" aria-labelledby="h-tema" class="scroll-mt-24">
+        <h2 id="h-tema" class="text-xl font-extrabold tracking-tight text-marine">Tema escuro — estratégia do design system</h2>
+        <p class="mb-4 text-sm text-ink-2">O tema escuro não cria uma segunda biblioteca de componentes. Os componentes continuam consumindo os mesmos tokens semânticos; apenas os valores dos tokens mudam conforme o tema resolvido.</p>
+
+        <div class="grid gap-4 lg:grid-cols-3">
+          <article class="rounded-xl border border-stroke bg-surface p-5 shadow-card">
+            <p class="text-xs font-extrabold uppercase tracking-wide text-primary">Modo</p>
+            <h3 class="mt-1 text-base font-bold">Três preferências</h3>
+            <p class="mt-2 text-sm text-ink-2"><strong>Sistema</strong> acompanha <code class="rounded bg-bg-app px-1 text-xs">prefers-color-scheme</code>. <strong>Claro</strong> e <strong>Escuro</strong> são escolhas persistidas localmente.</p>
+          </article>
+          <article class="rounded-xl border border-stroke bg-surface p-5 shadow-card">
+            <p class="text-xs font-extrabold uppercase tracking-wide text-primary">Arquitetura</p>
+            <h3 class="mt-1 text-base font-bold">Tema por tokens</h3>
+            <p class="mt-2 text-sm text-ink-2">É proibido duplicar componentes com árvores <code class="rounded bg-bg-app px-1 text-xs">dark:*</code> extensas quando a diferença puder ser resolvida pelo token semântico.</p>
+          </article>
+          <article class="rounded-xl border border-stroke bg-surface p-5 shadow-card">
+            <p class="text-xs font-extrabold uppercase tracking-wide text-primary">Contraste</p>
+            <h3 class="mt-1 text-base font-bold">Cores próprias para baixa luz</h3>
+            <p class="mt-2 text-sm text-ink-2">Cores de estado são recalibradas no tema escuro. O design system não reutiliza cegamente os mesmos hexadecimais do tema claro.</p>
+          </article>
+        </div>
+
+        <div class="mt-4 rounded-xl border border-stroke bg-surface p-5 shadow-card">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-extrabold uppercase tracking-wide text-marine">Contrato de tema para agentes</h3>
+              <p class="mt-1 text-sm text-ink-2">Ao criar um componente, use função semântica, nunca aparência literal. Exemplo: <code class="rounded bg-bg-app px-1 text-xs">surface</code>, <code class="rounded bg-bg-app px-1 text-xs">ink-2</code>, <code class="rounded bg-bg-app px-1 text-xs">danger-soft</code>.</p>
+            </div>
+            <button type="button" id="theme-demo-toggle" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Alternar claro/escuro</button>
+          </div>
+          <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-lg border border-stroke bg-bg-app p-4"><p class="text-xs font-bold text-ink-3">BACKGROUND</p><p class="mt-1 text-sm font-semibold">Fundo da aplicação</p></div>
+            <div class="rounded-lg border border-stroke bg-surface p-4 shadow-card"><p class="text-xs font-bold text-ink-3">SURFACE</p><p class="mt-1 text-sm font-semibold">Card e tabela</p></div>
+            <div class="rounded-lg border border-info bg-info-soft p-4"><p class="text-xs font-bold text-info">INFO</p><p class="mt-1 text-sm font-semibold">Intenção informativa</p></div>
+            <div class="rounded-lg border border-danger bg-danger-soft p-4"><p class="text-xs font-bold text-danger">DANGER</p><p class="mt-1 text-sm font-semibold">Intenção negativa</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           12. MAPA DE IMPLEMENTAÇÃO PARA AGENTES
+           ================================================================ -->
+      <section id="implementacao" aria-labelledby="h-implementacao" class="scroll-mt-24">
+        <h2 id="h-implementacao" class="text-xl font-extrabold tracking-tight text-marine">Mapa de implementação</h2>
+        <p class="mb-4 text-sm text-ink-2">Tradução do mock para componentes de produção. Nomes finais podem seguir a convenção do repositório, mas responsabilidades e variantes não devem ser diluídas.</p>
+        <div class="scroll-x rounded-lg border border-stroke bg-surface shadow-card">
+          <table class="w-full min-w-[880px] text-left text-sm">
+            <caption class="sr-only">Mapa entre padrões do mock e componentes recomendados para produção</caption>
+            <thead class="border-b border-stroke bg-bg-app text-xs uppercase tracking-wide text-ink-2">
+              <tr>
+                <th scope="col" class="px-4 py-3">Padrão</th>
+                <th scope="col" class="px-4 py-3">Componente sugerido</th>
+                <th scope="col" class="px-4 py-3">Variantes mínimas</th>
+                <th scope="col" class="px-4 py-3">Contrato obrigatório</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stroke">
+              <tr><td class="px-4 py-3 font-semibold">Botão</td><td class="px-4 py-3"><code>x-ui.button</code></td><td class="px-4 py-3">primary, secondary, tertiary, danger, icon</td><td class="px-4 py-3">size, disabled, loading, type e foco visível</td></tr>
+              <tr><td class="px-4 py-3 font-semibold">Campo</td><td class="px-4 py-3"><code>x-ui.field</code> + controle</td><td class="px-4 py-3">default, invalid, readonly, disabled</td><td class="px-4 py-3">label, hint, error, required e IDs associados</td></tr>
+              <tr><td class="px-4 py-3 font-semibold">Badge</td><td class="px-4 py-3"><code>x-ui.badge</code></td><td class="px-4 py-3">neutral, info, success, warning, danger, disabled</td><td class="px-4 py-3">texto obrigatório; ícone quando reforçar estado</td></tr>
+              <tr><td class="px-4 py-3 font-semibold">Alerta</td><td class="px-4 py-3"><code>x-ui.alert</code></td><td class="px-4 py-3">info, success, warning, danger</td><td class="px-4 py-3">título opcional, mensagem e role coerente</td></tr>
+              <tr><td class="px-4 py-3 font-semibold">Tabela</td><td class="px-4 py-3"><code>x-ui.data-table</code></td><td class="px-4 py-3">comfortable, compact</td><td class="px-4 py-3">caption, headers, loading, empty, error e paginação</td></tr>
+              <tr><td class="px-4 py-3 font-semibold">Modal / Drawer</td><td class="px-4 py-3"><code>x-ui.dialog</code></td><td class="px-4 py-3">modal, danger, drawer</td><td class="px-4 py-3">trap de foco, Esc, retorno de foco e aria-modal</td></tr>
+              <tr><td class="px-4 py-3 font-semibold">Shell</td><td class="px-4 py-3"><code>x-layout.app</code></td><td class="px-4 py-3">authenticated</td><td class="px-4 py-3">sidebar, topbar, breadcrumb, main e skip link</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           13. ACESSIBILIDADE — DECISÕES ADOTADAS
+           ================================================================ -->
+      <section id="acessibilidade" aria-labelledby="h-a11y" class="scroll-mt-24">
+        <h2 id="h-a11y" class="text-xl font-extrabold tracking-tight text-marine">Acessibilidade — decisões deste mockup</h2>
+        <div class="rounded-lg border border-stroke bg-surface p-5 shadow-card text-sm leading-relaxed text-ink-2">
+          <p class="mb-3">Estas decisões devem ser tratadas como piso mínimo do design system, não como diferencial. Em resumo: a estrutura usa HTML semântico real — <code class="rounded bg-bg-app px-1 text-xs">header</code>, <code class="rounded bg-bg-app px-1 text-xs">nav</code>, <code class="rounded bg-bg-app px-1 text-xs">main</code>, <code class="rounded bg-bg-app px-1 text-xs">table</code> com <code class="rounded bg-bg-app px-1 text-xs">caption</code> e <code class="rounded bg-bg-app px-1 text-xs">scope</code>, botões e links reais — com hierarquia única de headings (um H1 por página, seções em H2/H3).</p>
+          <p class="mb-3">Todo controle tem label associado (visível ou <code class="rounded bg-bg-app px-1 text-xs">sr-only</code>); placeholder nunca substitui label. Erros de validação usam <code class="rounded bg-bg-app px-1 text-xs">aria-invalid</code> + <code class="rounded bg-bg-app px-1 text-xs">aria-describedby</code> e trazem instrução de correção, não apenas cor. Nenhum estado é comunicado só por cor: badges combinam ícone, texto e borda; a barra de acento Electric Green vem sempre acompanhada de fundo e peso tipográfico.</p>
+          <p class="mb-3">Foco visível global via <code class="rounded bg-bg-app px-1 text-xs">:focus-visible</code> (anel cobalto 2px com offset), jamais removido sem substituto. Dropdowns, modais e drawer fecham com Esc, movem o foco para o diálogo ao abrir e o devolvem ao gatilho ao fechar; diálogos usam <code class="rounded bg-bg-app px-1 text-xs">role="dialog"</code> + <code class="rounded bg-bg-app px-1 text-xs">aria-modal</code>. Tabs seguem o padrão <code class="rounded bg-bg-app px-1 text-xs">role="tablist"</code> com <code class="rounded bg-bg-app px-1 text-xs">aria-selected</code>.</p>
+          <p>Os pares de cor texto/fundo foram escolhidos para contraste mínimo 4,5:1 em texto corrente (cores de estado escurecidas em relação às versões decorativas); Electric Green é proibido como cor de texto. Animações respeitam <code class="rounded bg-bg-app px-1 text-xs">prefers-reduced-motion</code>. Loading usa <code class="rounded bg-bg-app px-1 text-xs">aria-busy</code> e mensagens em <code class="rounded bg-bg-app px-1 text-xs">role="status"</code>; erros usam <code class="rounded bg-bg-app px-1 text-xs">role="alert"</code>.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============================ RODAPÉ ============================ -->
+    <footer class="border-t border-stroke bg-surface px-4 py-3 text-xs text-ink-3 lg:px-6">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p>SICODE Ecosystem · mockup de referência visual · dados fictícios</p>
+        <p>v1.1-theme-reference · Referência normativa visual · <a href="#visao-geral" class="font-semibold text-primary hover:underline">voltar ao topo</a></p>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ======================================================================
+     DIÁLOGOS (modal de confirmação, modal destrutivo, drawer)
+     ====================================================================== -->
+
+<!-- Overlay compartilhado -->
+<div id="dialog-overlay" class="fixed inset-0 z-40" style="background:var(--sc-overlay)" hidden></div>
+
+<!-- Modal de confirmação -->
+<div id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="mc-title" hidden
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="w-full max-w-md rounded-xl border border-stroke bg-surface-2 shadow-overlay">
+    <div class="flex items-start justify-between gap-3 border-b border-stroke px-5 py-4">
+      <h2 id="mc-title" class="text-base font-extrabold">Salvar alterações?</h2>
+      <button type="button" data-close class="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-2 hover:bg-bg-app" aria-label="Fechar diálogo">✕</button>
+    </div>
+    <p class="px-5 py-4 text-sm text-ink-2">As permissões de <span class="font-semibold">João Santos</span> serão atualizadas nas aplicações Legacy ES e SICODESK. O usuário será notificado por e-mail.</p>
+    <div class="flex justify-end gap-2 border-t border-stroke px-5 py-3.5">
+      <button type="button" data-close class="rounded-md border border-stroke bg-surface px-4 py-2 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Cancelar</button>
+      <button type="button" data-close class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal destrutivo -->
+<div id="modal-destroy" role="dialog" aria-modal="true" aria-labelledby="md-title" aria-describedby="md-desc" hidden
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="w-full max-w-md rounded-xl border border-danger bg-surface-2 shadow-overlay">
+    <div class="flex items-start justify-between gap-3 border-b border-stroke px-5 py-4">
+      <h2 id="md-title" class="text-base font-extrabold text-danger">Suspender acesso de Carlos Lima?</h2>
+      <button type="button" data-close class="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-2 hover:bg-bg-app" aria-label="Fechar diálogo">✕</button>
+    </div>
+    <div id="md-desc" class="px-5 py-4 text-sm text-ink-2">
+      <p>O usuário perderá acesso imediato ao <span class="font-semibold">SICODE Legacy SP</span>. Atividades em andamento serão devolvidas à fila.</p>
+      <p class="mt-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-warning"><span class="font-bold">▲ Esta ação é registrada em auditoria</span> e pode ser revertida por um administrador.</p>
+    </div>
+    <div class="flex justify-end gap-2 border-t border-stroke px-5 py-3.5">
+      <!-- A ação segura recebe o foco inicial; a destrutiva vem por último -->
+      <button type="button" data-close class="rounded-md border border-stroke bg-surface px-4 py-2 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Cancelar</button>
+      <button type="button" data-close class="rounded-md bg-danger px-4 py-2 text-sm font-semibold text-white hover:opacity-90">Suspender acesso</button>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer lateral de detalhes -->
+<div id="drawer-detalhes" role="dialog" aria-modal="true" aria-labelledby="dw-title" hidden
+     class="fixed inset-y-0 right-0 z-50 w-full max-w-md">
+  <div class="flex h-full flex-col border-l border-stroke bg-surface-2 shadow-overlay">
+    <div class="flex items-start justify-between gap-3 border-b border-stroke px-5 py-4">
+      <div>
+        <h2 id="dw-title" class="text-base font-extrabold">João Santos</h2>
+        <p class="text-xs text-ink-3">Prestadora Alfa · Matrícula EDP-48120</p>
+      </div>
+      <button type="button" data-close class="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-2 hover:bg-bg-app" aria-label="Fechar painel de detalhes">✕</button>
+    </div>
+    <div class="flex-1 space-y-4 overflow-y-auto px-5 py-4 text-sm">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wide text-ink-3">Status</p>
+        <p class="mt-1"><span class="rounded-full border border-warning bg-warning-soft px-2.5 py-0.5 text-[11px] font-bold text-warning">◷ Pendente</span></p>
+      </div>
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wide text-ink-3">Aplicações concedidas</p>
+        <ul class="mt-1 space-y-1 text-ink-2">
+          <li>• SICODE Legacy ES — perfil Operacional</li>
+          <li>• SICODESK — aguardando aprovação do gestor</li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wide text-ink-3">Contrato</p>
+        <p class="mt-1 text-ink-2">CT-2025-114 · Prestadora Alfa · vigente até 12/2026</p>
+      </div>
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wide text-ink-3">Últimos eventos</p>
+        <ul class="mt-1 space-y-1.5 text-ink-2">
+          <li><time class="tabular-nums text-ink-3">13/07 10:12</time> · Cadastro criado por Marina Alves</li>
+          <li><time class="tabular-nums text-ink-3">13/07 10:13</time> · Convite enviado por e-mail</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flex gap-2 border-t border-stroke px-5 py-3.5">
+      <button type="button" data-close class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover">Editar usuário</button>
+      <button type="button" data-close class="rounded-md border border-stroke bg-surface px-4 py-2 text-sm font-semibold text-ink-2 hover:bg-primary-soft">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     JAVASCRIPT MÍNIMO — apenas demonstrações visuais
+     ====================================================================== -->
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Tema claro / escuro / sistema ---------- */
+  const themeToggle = document.getElementById('theme-toggle');
+  const themeIcon = document.getElementById('theme-icon');
+  const themeLabel = document.getElementById('theme-label');
+  const themeChoices = Array.from(document.querySelectorAll('[data-theme-choice]'));
+  const themeDemoToggle = document.getElementById('theme-demo-toggle');
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function resolveTheme(mode) {
+    return mode === 'system' ? (systemTheme.matches ? 'dark' : 'light') : mode;
+  }
+
+  function applyTheme(mode, persist = true) {
+    const resolved = resolveTheme(mode);
+    document.documentElement.dataset.themeMode = mode;
+    document.documentElement.dataset.theme = resolved;
+    document.documentElement.style.colorScheme = resolved;
+    if (persist) localStorage.setItem('sicode-theme-mode', mode);
+
+    const labels = { system: 'Sistema', light: 'Claro', dark: 'Escuro' };
+    const icons = { system: '◐', light: '☀', dark: '☾' };
+    themeLabel.textContent = labels[mode];
+    themeIcon.textContent = icons[mode];
+    themeChoices.forEach((choice) => {
+      const selected = choice.dataset.themeChoice === mode;
+      choice.setAttribute('aria-checked', String(selected));
+      choice.classList.toggle('bg-primary-soft', selected);
+      choice.classList.toggle('text-primary', selected);
+    });
+  }
+
+  themeChoices.forEach((choice) => {
+    choice.addEventListener('click', () => {
+      applyTheme(choice.dataset.themeChoice);
+      const menu = document.getElementById('menu-theme');
+      menu.hidden = true;
+      themeToggle.setAttribute('aria-expanded', 'false');
+      themeToggle.focus();
+    });
+  });
+
+  themeDemoToggle?.addEventListener('click', () => {
+    const current = document.documentElement.dataset.theme;
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  systemTheme.addEventListener('change', () => {
+    if (document.documentElement.dataset.themeMode === 'system') applyTheme('system', false);
+  });
+
+  applyTheme(document.documentElement.dataset.themeMode || 'system', false);
+
+  /* ---------- Sidebar mobile ---------- */
+  const sidebar = document.getElementById('sidebar');
+  const overlaySb = document.getElementById('sidebar-overlay');
+  const btnSidebar = document.getElementById('btn-sidebar');
+
+  function setSidebar(open) {
+    sidebar.classList.toggle('-translate-x-full', !open);
+    overlaySb.hidden = !open;
+    btnSidebar.setAttribute('aria-expanded', String(open));
+  }
+  btnSidebar.addEventListener('click', () =>
+    setSidebar(sidebar.classList.contains('-translate-x-full')));
+  overlaySb.addEventListener('click', () => setSidebar(false));
+
+  /* ---------- Dropdowns genéricos ---------- */
+  const menuButtons = Array.from(document.querySelectorAll('[data-menu-button]'));
+
+  function closeAllMenus(except) {
+    menuButtons.forEach((btn) => {
+      const menu = document.getElementById(btn.getAttribute('aria-controls'));
+      if (menu && menu !== except) {
+        menu.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+  menuButtons.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const menu = document.getElementById(btn.getAttribute('aria-controls'));
+      const willOpen = menu.hidden;
+      closeAllMenus();
+      menu.hidden = !willOpen;
+      btn.setAttribute('aria-expanded', String(willOpen));
+    });
+  });
+  document.addEventListener('click', () => closeAllMenus());
+
+  /* ---------- Modais e drawer ---------- */
+  const dlgOverlay = document.getElementById('dialog-overlay');
+  let lastTrigger = null;
+  let openDialog = null;
+
+  function dialogFocusable() {
+    if (!openDialog) return [];
+    return Array.from(openDialog.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter((el) => !el.hidden && el.offsetParent !== null);
+  }
+  function openDlg(id, trigger) {
+    openDialog = document.getElementById(id);
+    lastTrigger = trigger;
+    dlgOverlay.hidden = false;
+    openDialog.hidden = false;
+    document.body.classList.add('overflow-hidden');
+    const focusable = dialogFocusable();
+    if (focusable[0]) focusable[0].focus();
+  }
+  function closeDlg() {
+    if (!openDialog) return;
+    openDialog.hidden = true;
+    dlgOverlay.hidden = true;
+    document.body.classList.remove('overflow-hidden');
+    if (lastTrigger) lastTrigger.focus();
+    openDialog = null;
+    lastTrigger = null;
+  }
+  document.querySelectorAll('[data-open]').forEach((btn) =>
+    btn.addEventListener('click', () => openDlg(btn.getAttribute('data-open'), btn)));
+  document.querySelectorAll('[data-close]').forEach((btn) =>
+    btn.addEventListener('click', closeDlg));
+  dlgOverlay.addEventListener('click', closeDlg);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeDlg();
+      closeAllMenus();
+      setSidebar(false);
+      return;
+    }
+    if (e.key === 'Tab' && openDialog) {
+      const items = dialogFocusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+
+  /* ---------- Densidade da tabela ---------- */
+  const tabela = document.getElementById('tabela-usuarios');
+  const btnComfy = document.getElementById('btn-comfy');
+  const btnCompact = document.getElementById('btn-compact');
+
+  function setDensity(compact) {
+    tabela.classList.toggle('density-compact', compact);
+    tabela.classList.toggle('density-comfortable', !compact);
+    btnComfy.setAttribute('aria-pressed', String(!compact));
+    btnCompact.setAttribute('aria-pressed', String(compact));
+    btnComfy.classList.toggle('bg-primary-soft', !compact);
+    btnComfy.classList.toggle('text-primary', !compact);
+    btnCompact.classList.toggle('bg-primary-soft', compact);
+    btnCompact.classList.toggle('text-primary', compact);
+  }
+  btnComfy.addEventListener('click', () => setDensity(false));
+  btnCompact.addEventListener('click', () => setDensity(true));
+
+  /* ---------- Seleção da tabela ---------- */
+  const selAll = document.getElementById('sel-all');
+  const rowChecks = Array.from(document.querySelectorAll('.row-check'));
+  const selBar = document.getElementById('selection-bar');
+  const selCount = document.getElementById('sel-count');
+
+  function refreshSelection() {
+    const n = rowChecks.filter((c) => c.checked).length;
+    selBar.hidden = n === 0;
+    selCount.textContent = n;
+    selAll.checked = n === rowChecks.length;
+    selAll.indeterminate = n > 0 && n < rowChecks.length;
+  }
+  selAll.addEventListener('change', () => {
+    rowChecks.forEach((c) => (c.checked = selAll.checked));
+    refreshSelection();
+  });
+  rowChecks.forEach((c) => c.addEventListener('change', refreshSelection));
+
+  /* ---------- Tabs ---------- */
+  const tabs = Array.from(document.querySelectorAll('.tab-btn'));
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => {
+        const selected = t === tab;
+        t.setAttribute('aria-selected', String(selected));
+        t.tabIndex = selected ? 0 : -1;
+        t.classList.toggle('border-primary', selected);
+        t.classList.toggle('text-primary', selected);
+        t.classList.toggle('font-bold', selected);
+        t.classList.toggle('border-transparent', !selected);
+        t.classList.toggle('text-ink-2', !selected);
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !selected;
+      });
+      tab.focus();
+    });
+  });
+})();
+</script>
+</body>
+</html>

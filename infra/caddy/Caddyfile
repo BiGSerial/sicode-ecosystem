@@ -1,0 +1,12 @@
+:80 {
+    handle_path /core/* {
+        reverse_proxy sicode-core:8000
+    }
+
+    handle_path /sicodesk/* {
+        reverse_proxy sicodesk:8000
+    }
+
+    respond /health "ok" 200
+}
+

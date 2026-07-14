@@ -1,0 +1,348 @@
+/*
+ * SICODE Design System tokens.
+ * Source of truth for Tailwind v4 and plain CSS consumers.
+ */
+
+:root {
+    color-scheme: light;
+
+    /* Colors: surfaces */
+    --sicode-color-background: #f3f5fa;
+    --sicode-color-surface: #ffffff;
+    --sicode-color-surface-muted: #e9edfc;
+    --sicode-color-surface-elevated: #ffffff;
+
+    /* Colors: text */
+    --sicode-color-text: #1b2547;
+    --sicode-color-text-muted: #4e5878;
+    --sicode-color-text-subtle: #7c86a6;
+    --sicode-color-text-inverse: #ffffff;
+    --sicode-color-text-disabled: #9aa2bc;
+
+    /* Colors: borders/focus */
+    --sicode-color-border: #dce1ee;
+    --sicode-color-border-strong: #b8c0d9;
+    --sicode-color-border-focus: #263cc8;
+
+    /* Colors: brand and intent */
+    --sicode-color-primary: #263cc8;
+    --sicode-color-primary-hover: #1d2fa0;
+    --sicode-color-primary-active: #162476;
+    --sicode-color-primary-subtle: #e9edfc;
+    --sicode-color-primary-foreground: #ffffff;
+    --sicode-color-primary-subtle-foreground: #212e5e;
+
+    --sicode-color-secondary: #212e5e;
+    --sicode-color-secondary-hover: #2c3b74;
+    --sicode-color-secondary-foreground: #ffffff;
+
+    --sicode-color-success: #0e7a3d;
+    --sicode-color-success-subtle: #e5f5eb;
+    --sicode-color-success-foreground: #ffffff;
+    --sicode-color-success-subtle-foreground: #14532d;
+
+    --sicode-color-warning: #925b00;
+    --sicode-color-warning-subtle: #fdf3dc;
+    --sicode-color-warning-foreground: #ffffff;
+    --sicode-color-warning-subtle-foreground: #6f4300;
+
+    --sicode-color-danger: #b3261e;
+    --sicode-color-danger-subtle: #fbeae9;
+    --sicode-color-danger-foreground: #ffffff;
+    --sicode-color-danger-subtle-foreground: #7f1d1d;
+
+    --sicode-color-info: #1d5fb8;
+    --sicode-color-info-subtle: #e8f0fb;
+    --sicode-color-info-foreground: #ffffff;
+    --sicode-color-info-subtle-foreground: #164a8f;
+
+    --sicode-color-neutral: #475569;
+    --sicode-color-neutral-subtle: #f1f5f9;
+    --sicode-color-neutral-foreground: #ffffff;
+    --sicode-color-neutral-subtle-foreground: #334155;
+
+    /* Typography */
+    --sicode-font-sans: 'Mulish', ui-sans-serif, system-ui, sans-serif;
+    --sicode-font-weight-regular: 400;
+    --sicode-font-weight-medium: 500;
+    --sicode-font-weight-semibold: 600;
+    --sicode-font-weight-bold: 700;
+
+    /* Typography scale */
+    --sicode-text-display: 2rem;
+    --sicode-leading-display: 2.5rem;
+    --sicode-text-heading-1: 1.75rem;
+    --sicode-leading-heading-1: 2.25rem;
+    --sicode-text-heading-2: 1.375rem;
+    --sicode-leading-heading-2: 1.875rem;
+    --sicode-text-heading-3: 1.125rem;
+    --sicode-leading-heading-3: 1.625rem;
+    --sicode-text-body: 0.875rem;
+    --sicode-leading-body: 1.375rem;
+    --sicode-text-body-small: 0.8125rem;
+    --sicode-leading-body-small: 1.25rem;
+    --sicode-text-label: 0.8125rem;
+    --sicode-leading-label: 1.125rem;
+    --sicode-text-caption: 0.75rem;
+    --sicode-leading-caption: 1rem;
+    --sicode-text-metric: 1.875rem;
+    --sicode-leading-metric: 2.25rem;
+    --sicode-text-table: 0.8125rem;
+    --sicode-leading-table: 1.125rem;
+
+    /* Spacing roles */
+    --sicode-spacing-page-x: 1.5rem;
+    --sicode-spacing-page-y: 1.25rem;
+    --sicode-spacing-page-compact-x: 1rem;
+    --sicode-spacing-page-compact-y: 1rem;
+    --sicode-spacing-section-gap: 1.5rem;
+    --sicode-spacing-field-gap: 1rem;
+    --sicode-spacing-toolbar-gap: 0.5rem;
+    --sicode-spacing-card-padding: 1rem;
+    --sicode-spacing-card-padding-lg: 1.25rem;
+    --sicode-spacing-modal-padding: 1.5rem;
+    --sicode-spacing-table-cell-x: 0.75rem;
+    --sicode-spacing-table-cell-y: 0.5rem;
+    --sicode-spacing-table-cell-compact-y: 0.375rem;
+    --sicode-spacing-sidebar-width: 16rem;
+    --sicode-spacing-topbar-height: 3.5rem;
+
+    /* Radius */
+    --sicode-radius-xs: 0.125rem;
+    --sicode-radius-sm: 0.25rem;
+    --sicode-radius-md: 0.375rem;
+    --sicode-radius-lg: 0.5rem;
+    --sicode-radius-xl: 0.75rem;
+
+    /* Shadows */
+    --sicode-shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+    --sicode-shadow-md: 0 8px 24px -16px rgb(15 23 42 / 0.35);
+    --sicode-shadow-lg: 0 18px 48px -28px rgb(15 23 42 / 0.45);
+
+    /* Focus */
+    --sicode-focus-ring: 0 0 0 3px rgb(38 60 200 / 0.28);
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --sicode-color-background: #0d1224;
+    --sicode-color-surface: #141b31;
+    --sicode-color-surface-muted: #222e59;
+    --sicode-color-surface-elevated: #1a2340;
+
+    --sicode-color-text: #f2f5ff;
+    --sicode-color-text-muted: #c4cce3;
+    --sicode-color-text-subtle: #8f9ab9;
+    --sicode-color-text-inverse: #0d1224;
+    --sicode-color-text-disabled: #697694;
+
+    --sicode-color-border: #2b3658;
+    --sicode-color-border-strong: #46547c;
+    --sicode-color-border-focus: #9ca8ff;
+
+    --sicode-color-primary: #7c8cff;
+    --sicode-color-primary-hover: #98a5ff;
+    --sicode-color-primary-active: #b8c1ff;
+    --sicode-color-primary-subtle: #222e59;
+    --sicode-color-primary-foreground: #0d1224;
+    --sicode-color-primary-subtle-foreground: #dfe4ff;
+
+    --sicode-color-secondary: #24345f;
+    --sicode-color-secondary-hover: #304378;
+    --sicode-color-secondary-foreground: #f2f5ff;
+
+    --sicode-color-success: #59d98b;
+    --sicode-color-success-subtle: #153928;
+    --sicode-color-success-foreground: #07140d;
+    --sicode-color-success-subtle-foreground: #bdf4d1;
+
+    --sicode-color-warning: #f5c66b;
+    --sicode-color-warning-subtle: #433217;
+    --sicode-color-warning-foreground: #171004;
+    --sicode-color-warning-subtle-foreground: #ffe3a3;
+
+    --sicode-color-danger: #ff837d;
+    --sicode-color-danger-subtle: #48211f;
+    --sicode-color-danger-foreground: #1c0504;
+    --sicode-color-danger-subtle-foreground: #ffc1bd;
+
+    --sicode-color-info: #7eb8ff;
+    --sicode-color-info-subtle: #173454;
+    --sicode-color-info-foreground: #06111f;
+    --sicode-color-info-subtle-foreground: #c8e0ff;
+
+    --sicode-color-neutral: #94a3b8;
+    --sicode-color-neutral-subtle: #202a46;
+    --sicode-color-neutral-foreground: #0d1224;
+    --sicode-color-neutral-subtle-foreground: #d6deef;
+
+    --sicode-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.28);
+    --sicode-shadow-md: 0 8px 24px -16px rgb(0 0 0 / 0.45);
+    --sicode-shadow-lg: 0 18px 48px -28px rgb(0 0 0 / 0.58);
+    --sicode-focus-ring: 0 0 0 3px rgb(156 168 255 / 0.34);
+}
+
+@media (prefers-color-scheme: dark) {
+    html[data-theme-mode="system"] {
+        color-scheme: dark;
+
+        --sicode-color-background: #0d1224;
+        --sicode-color-surface: #141b31;
+        --sicode-color-surface-muted: #222e59;
+        --sicode-color-surface-elevated: #1a2340;
+
+        --sicode-color-text: #f2f5ff;
+        --sicode-color-text-muted: #c4cce3;
+        --sicode-color-text-subtle: #8f9ab9;
+        --sicode-color-text-inverse: #0d1224;
+        --sicode-color-text-disabled: #697694;
+
+        --sicode-color-border: #2b3658;
+        --sicode-color-border-strong: #46547c;
+        --sicode-color-border-focus: #9ca8ff;
+
+        --sicode-color-primary: #7c8cff;
+        --sicode-color-primary-hover: #98a5ff;
+        --sicode-color-primary-active: #b8c1ff;
+        --sicode-color-primary-subtle: #222e59;
+        --sicode-color-primary-foreground: #0d1224;
+        --sicode-color-primary-subtle-foreground: #dfe4ff;
+
+        --sicode-color-secondary: #24345f;
+        --sicode-color-secondary-hover: #304378;
+        --sicode-color-secondary-foreground: #f2f5ff;
+
+        --sicode-color-success: #59d98b;
+        --sicode-color-success-subtle: #153928;
+        --sicode-color-success-foreground: #07140d;
+        --sicode-color-success-subtle-foreground: #bdf4d1;
+
+        --sicode-color-warning: #f5c66b;
+        --sicode-color-warning-subtle: #433217;
+        --sicode-color-warning-foreground: #171004;
+        --sicode-color-warning-subtle-foreground: #ffe3a3;
+
+        --sicode-color-danger: #ff837d;
+        --sicode-color-danger-subtle: #48211f;
+        --sicode-color-danger-foreground: #1c0504;
+        --sicode-color-danger-subtle-foreground: #ffc1bd;
+
+        --sicode-color-info: #7eb8ff;
+        --sicode-color-info-subtle: #173454;
+        --sicode-color-info-foreground: #06111f;
+        --sicode-color-info-subtle-foreground: #c8e0ff;
+
+        --sicode-color-neutral: #94a3b8;
+        --sicode-color-neutral-subtle: #202a46;
+        --sicode-color-neutral-foreground: #0d1224;
+        --sicode-color-neutral-subtle-foreground: #d6deef;
+
+        --sicode-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.28);
+        --sicode-shadow-md: 0 8px 24px -16px rgb(0 0 0 / 0.45);
+        --sicode-shadow-lg: 0 18px 48px -28px rgb(0 0 0 / 0.58);
+        --sicode-focus-ring: 0 0 0 3px rgb(156 168 255 / 0.34);
+    }
+}
+
+@theme {
+    --font-sans: var(--sicode-font-sans);
+
+    --text-display: var(--sicode-text-display);
+    --text-display--line-height: var(--sicode-leading-display);
+    --text-heading-1: var(--sicode-text-heading-1);
+    --text-heading-1--line-height: var(--sicode-leading-heading-1);
+    --text-heading-2: var(--sicode-text-heading-2);
+    --text-heading-2--line-height: var(--sicode-leading-heading-2);
+    --text-heading-3: var(--sicode-text-heading-3);
+    --text-heading-3--line-height: var(--sicode-leading-heading-3);
+    --text-body: var(--sicode-text-body);
+    --text-body--line-height: var(--sicode-leading-body);
+    --text-body-small: var(--sicode-text-body-small);
+    --text-body-small--line-height: var(--sicode-leading-body-small);
+    --text-label: var(--sicode-text-label);
+    --text-label--line-height: var(--sicode-leading-label);
+    --text-caption: var(--sicode-text-caption);
+    --text-caption--line-height: var(--sicode-leading-caption);
+    --text-metric: var(--sicode-text-metric);
+    --text-metric--line-height: var(--sicode-leading-metric);
+    --text-table: var(--sicode-text-table);
+    --text-table--line-height: var(--sicode-leading-table);
+
+    --spacing-page-x: var(--sicode-spacing-page-x);
+    --spacing-page-y: var(--sicode-spacing-page-y);
+    --spacing-page-compact-x: var(--sicode-spacing-page-compact-x);
+    --spacing-page-compact-y: var(--sicode-spacing-page-compact-y);
+    --spacing-section-gap: var(--sicode-spacing-section-gap);
+    --spacing-field-gap: var(--sicode-spacing-field-gap);
+    --spacing-toolbar-gap: var(--sicode-spacing-toolbar-gap);
+    --spacing-card-padding: var(--sicode-spacing-card-padding);
+    --spacing-card-padding-lg: var(--sicode-spacing-card-padding-lg);
+    --spacing-modal-padding: var(--sicode-spacing-modal-padding);
+    --spacing-table-cell-x: var(--sicode-spacing-table-cell-x);
+    --spacing-table-cell-y: var(--sicode-spacing-table-cell-y);
+    --spacing-table-cell-compact-y: var(--sicode-spacing-table-cell-compact-y);
+    --spacing-sidebar-width: var(--sicode-spacing-sidebar-width);
+    --spacing-topbar-height: var(--sicode-spacing-topbar-height);
+
+    --color-background: var(--sicode-color-background);
+    --color-surface: var(--sicode-color-surface);
+    --color-surface-muted: var(--sicode-color-surface-muted);
+    --color-surface-elevated: var(--sicode-color-surface-elevated);
+
+    --color-text: var(--sicode-color-text);
+    --color-text-muted: var(--sicode-color-text-muted);
+    --color-text-subtle: var(--sicode-color-text-subtle);
+    --color-text-inverse: var(--sicode-color-text-inverse);
+    --color-text-disabled: var(--sicode-color-text-disabled);
+
+    --color-border: var(--sicode-color-border);
+    --color-border-strong: var(--sicode-color-border-strong);
+    --color-border-focus: var(--sicode-color-border-focus);
+
+    --color-primary: var(--sicode-color-primary);
+    --color-primary-hover: var(--sicode-color-primary-hover);
+    --color-primary-active: var(--sicode-color-primary-active);
+    --color-primary-subtle: var(--sicode-color-primary-subtle);
+    --color-primary-foreground: var(--sicode-color-primary-foreground);
+    --color-primary-subtle-foreground: var(--sicode-color-primary-subtle-foreground);
+
+    --color-secondary: var(--sicode-color-secondary);
+    --color-secondary-hover: var(--sicode-color-secondary-hover);
+    --color-secondary-foreground: var(--sicode-color-secondary-foreground);
+
+    --color-success: var(--sicode-color-success);
+    --color-success-subtle: var(--sicode-color-success-subtle);
+    --color-success-foreground: var(--sicode-color-success-foreground);
+    --color-success-subtle-foreground: var(--sicode-color-success-subtle-foreground);
+
+    --color-warning: var(--sicode-color-warning);
+    --color-warning-subtle: var(--sicode-color-warning-subtle);
+    --color-warning-foreground: var(--sicode-color-warning-foreground);
+    --color-warning-subtle-foreground: var(--sicode-color-warning-subtle-foreground);
+
+    --color-danger: var(--sicode-color-danger);
+    --color-danger-subtle: var(--sicode-color-danger-subtle);
+    --color-danger-foreground: var(--sicode-color-danger-foreground);
+    --color-danger-subtle-foreground: var(--sicode-color-danger-subtle-foreground);
+
+    --color-info: var(--sicode-color-info);
+    --color-info-subtle: var(--sicode-color-info-subtle);
+    --color-info-foreground: var(--sicode-color-info-foreground);
+    --color-info-subtle-foreground: var(--sicode-color-info-subtle-foreground);
+
+    --color-neutral: var(--sicode-color-neutral);
+    --color-neutral-subtle: var(--sicode-color-neutral-subtle);
+    --color-neutral-foreground: var(--sicode-color-neutral-foreground);
+    --color-neutral-subtle-foreground: var(--sicode-color-neutral-subtle-foreground);
+
+    --radius-xs: var(--sicode-radius-xs);
+    --radius-sm: var(--sicode-radius-sm);
+    --radius-md: var(--sicode-radius-md);
+    --radius-lg: var(--sicode-radius-lg);
+    --radius-xl: var(--sicode-radius-xl);
+
+    --shadow-sicode-sm: var(--sicode-shadow-sm);
+    --shadow-sicode-md: var(--sicode-shadow-md);
+    --shadow-sicode-lg: var(--sicode-shadow-lg);
+}

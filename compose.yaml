@@ -1,0 +1,95 @@
+services:
+  sicode-core:
+    build:
+      context: .
+      dockerfile: infra/docker/php84/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./apps/sicode-core:/var/www/html
+    env_file:
+      - ./apps/sicode-core/.env.example
+    environment:
+      APP_ENV: local
+      APP_KEY: ${SICODE_CORE_APP_KEY:-base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
+      DB_HOST: sicode-postgres
+      DB_DATABASE: sicode_core
+      DB_USERNAME: sicode_core
+      DB_PASSWORD: ${LOCAL_DATABASE_PASSWORD:-local_dev_password}
+    depends_on:
+      sicode-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "${CORE_HTTP_PORT:-8081}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1:8000/health') === false ? 1 : 0);\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  sicodesk:
+    build:
+      context: .
+      dockerfile: infra/docker/php84/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./apps/sicodesk:/var/www/html
+    env_file:
+      - ./apps/sicodesk/.env.example
+    environment:
+      APP_ENV: local
+      APP_KEY: ${SICODESK_APP_KEY:-base64:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=}
+      DB_HOST: sicode-postgres
+      DB_DATABASE: sicodesk
+      DB_USERNAME: sicodesk
+      DB_PASSWORD: ${LOCAL_DATABASE_PASSWORD:-local_dev_password}
+    depends_on:
+      sicode-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "${SICODESK_HTTP_PORT:-8082}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1:8000/health') === false ? 1 : 0);\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  sicode-postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: sicode_admin
+      POSTGRES_PASSWORD: ${LOCAL_DATABASE_PASSWORD:-local_dev_password}
+      POSTGRES_DB: sicode_admin
+    volumes:
+      - sicode-postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sicode_admin -d sicode_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_HOST_PORT:-6380}:6379"
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      sicode-core:
+        condition: service_started
+      sicodesk:
+        condition: service_started
+    ports:
+      - "${CADDY_HTTP_PORT:-8090}:80"
+
+volumes:
+  sicode-postgres-data:
