@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Hub;
 
 use App\ApplicationEntry\EvaluateApplicationEntry;
+use App\ApplicationLaunch\ResolveApplicationLaunchClient;
 use App\Models\Application;
 use App\Models\ApplicationContext;
 use App\Models\User;
@@ -15,6 +16,7 @@ final class ResolveUserHubApplications
 {
     public function __construct(
         private readonly EvaluateApplicationEntry $evaluateApplicationEntry,
+        private readonly ResolveApplicationLaunchClient $resolveApplicationLaunchClient,
     ) {}
 
     /**
@@ -77,7 +79,16 @@ final class ResolveUserHubApplications
             contextId: $context?->id,
             contextCode: $context?->code,
             contextName: $context?->name,
-            launchUrl: null,
+            launchUrl: $this->launchUrl($application, $context),
         );
+    }
+
+    private function launchUrl(Application $application, ?ApplicationContext $context): ?string
+    {
+        if (($this->resolveApplicationLaunchClient)($application, $context) === null) {
+            return null;
+        }
+
+        return route('applications.launch', ['application' => $application->id]);
     }
 }

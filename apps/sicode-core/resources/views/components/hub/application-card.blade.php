@@ -31,15 +31,23 @@
         </div>
         <div class="flex items-center justify-between gap-3">
             <dt class="font-medium text-text-muted">Lançamento</dt>
-            <dd class="text-right text-text-muted">Protocolo pendente</dd>
+            <dd class="text-right {{ $entry->launchUrl !== null ? 'font-semibold text-success-subtle-foreground' : 'text-text-muted' }}">
+                {{ $entry->launchUrl !== null ? 'Configurado' : 'Protocolo pendente' }}
+            </dd>
         </div>
     </dl>
 
     <div class="mt-auto pt-5">
         @if ($entry->launchUrl !== null)
-            <a href="{{ $entry->launchUrl }}" class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-label font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring" aria-label="Entrar em {{ $entry->applicationName }}">
-                Entrar
-            </a>
+            <form method="POST" action="{{ $entry->launchUrl }}">
+                @csrf
+                @if ($entry->contextId !== null)
+                    <input type="hidden" name="context_id" value="{{ $entry->contextId }}">
+                @endif
+                <button type="submit" class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-label font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:ring" aria-label="Entrar em {{ $entry->applicationName }}">
+                    Entrar
+                </button>
+            </form>
         @else
             <button type="button" class="inline-flex w-full cursor-not-allowed items-center justify-center rounded-md border border-border bg-surface-muted px-4 py-2 text-label font-semibold text-text-muted" disabled>
                 Entrada em breve

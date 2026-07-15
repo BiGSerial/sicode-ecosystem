@@ -47,4 +47,12 @@ class User extends CoreModel
     {
         return $this->hasMany(ApplicationAccess::class);
     }
+
+    /**
+     * @return HasMany<ApplicationLaunch, $this>
+     */
+    public function applicationLaunches(): HasMany
+    {
+        return $this->hasMany(ApplicationLaunch::class);
+    }
 }

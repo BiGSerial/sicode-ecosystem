@@ -85,9 +85,11 @@ O modelo atual de `Application` e `ApplicationContext` nao possui destino seguro
 
 O protocolo arquitetural inicial de lancamento CORE -> aplicacao consumidora esta definido em `docs/decisions/ADR-002-core-launch-protocol-and-legacy-consumer.md`.
 
-O Hub atual ainda nao implementa o endpoint de lancamento, emissao de codigo, troca backend-to-backend ou redirecionamento real para consumidor. Por isso, ele apresenta a aplicacao permitida, mas a acao de entrada permanece sem navegacao real ate tarefa tecnica propria.
+O lado CORE do protocolo esta implementado em `docs/architecture/core-application-launch-protocol.md`.
 
-Qualquer implementacao futura deve reavaliar `ApplicationEntry` no backend, emitir codigo de lancamento de uso unico e respeitar o contrato de callback/troca backend-to-backend definido na ADR-002.
+Quando uma entrada possui `ApplicationClient` ativo e callback HTTPS configurado, o Hub inicia o lancamento por formulario `POST` com CSRF para o endpoint CORE. O Hub nao navega diretamente para aplicacao consumidora nem transporta identidade no card.
+
+Quando a aplicacao/contexto ainda nao possui configuracao valida de launch, o Hub preserva o comportamento seguro e mostra a entrada como indisponivel para lancamento.
 
 ## Evolucao futura
 

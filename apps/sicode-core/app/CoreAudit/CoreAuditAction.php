@@ -63,6 +63,12 @@ enum CoreAuditAction: string
     case ContractApplicationGrantSuspended = 'CONTRACT_APPLICATION_GRANT_SUSPENDED';
     case ContractApplicationGrantReactivated = 'CONTRACT_APPLICATION_GRANT_REACTIVATED';
 
+    case ApplicationLaunchIssued = 'APPLICATION_LAUNCH_ISSUED';
+    case ApplicationLaunchRejected = 'APPLICATION_LAUNCH_REJECTED';
+    case ApplicationLaunchExchanged = 'APPLICATION_LAUNCH_EXCHANGED';
+    case ApplicationLaunchExchangeRejected = 'APPLICATION_LAUNCH_EXCHANGE_REJECTED';
+    case ApplicationLaunchReplayRejected = 'APPLICATION_LAUNCH_REPLAY_REJECTED';
+
     /**
      * @return list<string>
      */

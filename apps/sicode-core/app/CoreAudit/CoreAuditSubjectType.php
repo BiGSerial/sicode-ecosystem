@@ -18,6 +18,8 @@ enum CoreAuditSubjectType: string
     case ApplicationContext = 'APPLICATION_CONTEXT';
     case ApplicationAccess = 'APPLICATION_ACCESS';
     case ContractApplicationGrant = 'CONTRACT_APPLICATION_GRANT';
+    case ApplicationLaunch = 'APPLICATION_LAUNCH';
+    case ApplicationLaunchAttempt = 'APPLICATION_LAUNCH_ATTEMPT';
 
     /**
      * @return list<string>

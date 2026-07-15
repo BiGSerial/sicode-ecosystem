@@ -34,6 +34,14 @@ class ApplicationContext extends CoreModel
     }
 
     /**
+     * @return HasMany<ApplicationLaunch, $this>
+     */
+    public function launches(): HasMany
+    {
+        return $this->hasMany(ApplicationLaunch::class, 'context_id');
+    }
+
+    /**
      * @return HasMany<ApplicationAccess, $this>
      */
     public function accesses(): HasMany

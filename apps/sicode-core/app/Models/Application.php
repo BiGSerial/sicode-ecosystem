@@ -33,6 +33,14 @@ class Application extends CoreModel
     }
 
     /**
+     * @return HasMany<ApplicationLaunch, $this>
+     */
+    public function launches(): HasMany
+    {
+        return $this->hasMany(ApplicationLaunch::class);
+    }
+
+    /**
      * @return HasMany<ApplicationAccess, $this>
      */
     public function accesses(): HasMany

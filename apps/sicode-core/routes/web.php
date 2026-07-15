@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApplicationLaunchController;
 use App\Http\Controllers\HubController;
 use App\Http\Controllers\LocalSessionController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,9 @@ Route::post('/logout', [LocalSessionController::class, 'destroy'])
 
 Route::get('/hub', HubController::class)
     ->name('hub');
+
+Route::post('/applications/{application}/launch', [ApplicationLaunchController::class, 'store'])
+    ->name('applications.launch');
 
 Route::get('/health', function () {
     return response()->json([

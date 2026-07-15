@@ -400,6 +400,62 @@ class CoreSchemaConstraintsTest extends TestCase
         $this->createOrganization($document);
     }
 
+    public function test_application_launch_token_hash_is_unique(): void
+    {
+        $applicationId = $this->createCoreApplication('launch-unique');
+        $clientId = $this->createApplicationClient($applicationId, 'launch-unique-client');
+        $tokenHash = hash('sha256', 'same-code');
+
+        $this->createApplicationLaunch($applicationId, $clientId, tokenHash: $tokenHash);
+
+        $this->expectException(QueryException::class);
+
+        $this->createApplicationLaunch($applicationId, $clientId, tokenHash: $tokenHash);
+    }
+
+    public function test_application_launch_requires_https_callback(): void
+    {
+        $applicationId = $this->createCoreApplication('launch-callback');
+        $clientId = $this->createApplicationClient($applicationId, 'launch-callback-client');
+
+        $this->expectException(QueryException::class);
+
+        $this->createApplicationLaunch($applicationId, $clientId, callbackUrl: 'http://consumer.example.test/callback');
+    }
+
+    public function test_application_launch_client_must_belong_to_same_application(): void
+    {
+        $applicationId = $this->createCoreApplication('launch-app-a');
+        $otherApplicationId = $this->createCoreApplication('launch-app-b');
+        $clientId = $this->createApplicationClient($otherApplicationId, 'launch-app-b-client');
+
+        $this->expectException(QueryException::class);
+
+        $this->createApplicationLaunch($applicationId, $clientId);
+    }
+
+    public function test_application_launch_client_must_belong_to_same_context(): void
+    {
+        $applicationId = $this->createCoreApplication('launch-context');
+        $es = $this->createContext($applicationId, 'es');
+        $sp = $this->createContext($applicationId, 'sp');
+        $clientId = $this->createApplicationClient($applicationId, 'launch-context-client', $sp);
+
+        $this->expectException(QueryException::class);
+
+        $this->createApplicationLaunch($applicationId, $clientId, contextId: $es);
+    }
+
+    public function test_application_launch_consumed_client_requires_consumed_at(): void
+    {
+        $applicationId = $this->createCoreApplication('launch-consumed');
+        $clientId = $this->createApplicationClient($applicationId, 'launch-consumed-client');
+
+        $this->expectException(QueryException::class);
+
+        $this->createApplicationLaunch($applicationId, $clientId, consumedByClientId: $clientId);
+    }
+
     private function createUser(): string
     {
         $id = (string) Str::uuid();
@@ -580,6 +636,37 @@ class CoreSchemaConstraintsTest extends TestCase
             'status' => $status,
             'starts_at' => $startsAt ?? now()->subDay(),
             'ends_at' => $endsAt,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $id;
+    }
+
+    private function createApplicationLaunch(
+        string $applicationId,
+        string $clientId,
+        ?string $contextId = null,
+        ?string $tokenHash = null,
+        string $callbackUrl = 'https://consumer.example.test/callback',
+        ?string $consumedByClientId = null,
+    ): string {
+        $id = (string) Str::uuid();
+        $issuedAt = now()->subMinute();
+
+        DB::table('application_launches')->insert([
+            'id' => $id,
+            'user_id' => $this->createUser(),
+            'application_id' => $applicationId,
+            'context_id' => $contextId,
+            'client_id' => $clientId,
+            'token_hash' => $tokenHash ?? hash('sha256', (string) Str::uuid()),
+            'state_hash' => hash('sha256', (string) Str::uuid()),
+            'callback_url' => $callbackUrl,
+            'issued_at' => $issuedAt,
+            'expires_at' => $issuedAt->copy()->addMinutes(5),
+            'consumed_at' => null,
+            'consumed_by_client_id' => $consumedByClientId,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
