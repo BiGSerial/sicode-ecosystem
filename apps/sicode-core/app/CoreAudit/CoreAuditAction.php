@@ -17,6 +17,10 @@ enum CoreAuditAction: string
     case LocalPasswordCredentialDisabled = 'LOCAL_PASSWORD_CREDENTIAL_DISABLED';
     case LocalPasswordCredentialRehashed = 'LOCAL_PASSWORD_CREDENTIAL_REHASHED';
 
+    case LocalAuthenticationSucceeded = 'LOCAL_AUTHENTICATION_SUCCEEDED';
+    case LocalAuthenticationRejected = 'LOCAL_AUTHENTICATION_REJECTED';
+    case LocalSessionEnded = 'LOCAL_SESSION_ENDED';
+
     case ExternalIdentityLinked = 'EXTERNAL_IDENTITY_LINKED';
     case ExternalIdentityRevoked = 'EXTERNAL_IDENTITY_REVOKED';
     case ExternalIdentityArchived = 'EXTERNAL_IDENTITY_ARCHIVED';

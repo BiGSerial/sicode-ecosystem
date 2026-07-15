@@ -108,7 +108,7 @@ No container oficial, `php artisan test` e `vendor/bin/phpunit` devem executar s
 
 ## Analise estatica do CORE
 
-Use `make core-analyse` para executar PHPStan com Larastan no SICODE CORE.
+Use `make core-analyse` para executar PHPStan com Larastan no SICODE CORE. O comando oficial usa `--memory-limit=512M` para evitar falhas de infraestrutura no worker paralelo do PHPStan.
 
 Politica inicial:
 

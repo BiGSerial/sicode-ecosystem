@@ -8,6 +8,7 @@ enum CoreAuditSubjectType: string
 {
     case User = 'USER';
     case LocalPasswordCredential = 'LOCAL_PASSWORD_CREDENTIAL';
+    case LocalAuthenticationAttempt = 'LOCAL_AUTHENTICATION_ATTEMPT';
     case ExternalIdentity = 'EXTERNAL_IDENTITY';
     case Organization = 'ORGANIZATION';
     case OrganizationMembership = 'ORGANIZATION_MEMBERSHIP';

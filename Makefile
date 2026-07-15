@@ -24,12 +24,12 @@ core-shell:
 	$(COMPOSE) exec sicode-core bash
 
 core-analyse:
-	$(COMPOSE) exec sicode-core vendor/bin/phpstan analyse
+	$(COMPOSE) exec sicode-core vendor/bin/phpstan analyse --memory-limit=512M
 
 core-quality:
 	$(COMPOSE) exec sicode-core composer validate --strict
 	$(COMPOSE) exec sicode-core vendor/bin/pint --test
-	$(COMPOSE) exec sicode-core vendor/bin/phpstan analyse
+	$(COMPOSE) exec sicode-core vendor/bin/phpstan analyse --memory-limit=512M
 	$(MAKE) core-test
 	$(MAKE) core-test-pgsql
 

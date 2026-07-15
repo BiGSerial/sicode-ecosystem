@@ -109,29 +109,39 @@ No rehash is executed here. A future login/session boundary may perform an expli
 
 ## Audit
 
-This capability does not write `CoreAuditEvent` and does not add login success or login failure audit actions.
+This capability does not write `CoreAuditEvent` directly.
 
-Login security auditing belongs to a future boundary that has request context, client data, rate-limiting outcome, and public response semantics.
+Login security auditing belongs to the HTTP/session boundary, which has request context, session semantics and public response semantics.
+
+Implemented boundary:
+
+- `StartLocalSession` records `LOCAL_AUTHENTICATION_SUCCEEDED` for successful authentication.
+- `StartLocalSession` records `LOCAL_AUTHENTICATION_REJECTED` for refused authentication.
+- `EndLocalSession` records `LOCAL_SESSION_ENDED` when an authenticated local session is closed.
+
+Rejected attempts use `LOCAL_AUTHENTICATION_ATTEMPT` as subject and the operation `correlation_id` as `subject_id`, avoiding exposure of a resolved user for invalid-credential paths. Audit details are allowlisted and contain the structured reason only, without password, hash, token, cookie, request payload or secret.
 
 ## Rate Limiting
 
 Rate limiting is not implemented inside `AuthenticateLocalUser`.
 
-The future HTTP login boundary must apply Laravel rate limiting before calling this capability.
+The HTTP login boundary applies Laravel rate limiting before calling this capability, using the `local-login` limiter. The limiter key combines the normalized identifier and request IP.
 
-## Laravel Auth Boundary
+## Laravel Session Boundary
 
 This capability does not integrate with `Auth::attempt`, `Auth::login`, `SessionGuard`, `EloquentUserProvider`, `Authenticatable`, remember-me cookies, or custom guards.
 
-Future integration boundary:
+Session integration boundary:
 
 ```mermaid
 flowchart TD
     A[HTTP Login Boundary] --> B[Rate Limit]
     B --> C[AuthenticateLocalUser]
     C -->|DENIED| D[Public Login Response]
-    C -->|AUTHENTICATED| E[Session/Auth Integration]
+    C -->|AUTHENTICATED| E[Laravel Session Integration]
 ```
+
+`StartLocalSession` stores the authenticated CORE user UUID in the Laravel session under a CORE-owned session key. It does not perform Application Entry authorization and does not use Laravel's Eloquent password provider.
 
 ## Application Entry Separation
 
