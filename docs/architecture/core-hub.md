@@ -83,23 +83,16 @@ Qualquer endpoint futuro de lancamento de aplicacao deve executar autorizacao no
 
 O modelo atual de `Application` e `ApplicationContext` nao possui destino seguro de lancamento.
 
-Ainda nao existe protocolo aprovado para:
+O protocolo arquitetural inicial de lancamento CORE -> aplicacao consumidora esta definido em `docs/decisions/ADR-002-core-launch-protocol-and-legacy-consumer.md`.
 
-- SSO;
-- OIDC;
-- token de lancamento;
-- sessao compartilhada;
-- redirecionamento autenticado para aplicacao consumidora.
+O Hub atual ainda nao implementa o endpoint de lancamento, emissao de codigo, troca backend-to-backend ou redirecionamento real para consumidor. Por isso, ele apresenta a aplicacao permitida, mas a acao de entrada permanece sem navegacao real ate tarefa tecnica propria.
 
-Por isso, o Hub apresenta a aplicacao permitida, mas a acao de entrada permanece sem navegacao real.
-
-O protocolo de lancamento da aplicacao e uma responsabilidade arquitetural posterior.
+Qualquer implementacao futura deve reavaliar `ApplicationEntry` no backend, emitir codigo de lancamento de uso unico e respeitar o contrato de callback/troca backend-to-backend definido na ADR-002.
 
 ## Evolucao futura
 
 Evolucoes esperadas exigem decisao propria:
 
-- protocolo seguro de lancamento;
 - OAuth 2.0 / OIDC;
 - URLs de aplicacao ou clients com contrato de redirect;
 - seletor rico de contexto quando houver regra canonica aprovada;

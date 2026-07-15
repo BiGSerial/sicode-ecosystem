@@ -130,6 +130,33 @@ Para usuarios nao migrados:
 - PERMITIDO: fluxo Legacy existente durante transicao;
 - OBRIGATORIO: registrar caminho de migracao para identidade CORE.
 
+## Lancamento CORE para Legacy Laravel 10
+
+O protocolo arquitetural de lancamento CORE -> Legacy esta definido em `docs/decisions/ADR-002-core-launch-protocol-and-legacy-consumer.md`.
+
+Fluxo normativo:
+
+```text
+CORE Hub
+-> launch authorization
+-> legacy callback
+-> backend exchange
+-> resolve CORE subject
+-> link to legacy user
+-> Laravel 10 session
+-> session regeneration
+-> internal SICODE route
+-> normal Blade/Livewire 2 operation
+```
+
+O Legacy deve receber o callback HTTP, validar parametros tecnicos, trocar o codigo com o CORE por backend-to-backend, resolver `core_subject` para usuario local, estabelecer sua propria sessao Laravel 10, regenerar a sessao e redirecionar somente para rota interna segura.
+
+Livewire 2 nao deve participar do protocolo de autenticacao ou lancamento. Depois da sessao local estabelecida, Blade e Livewire continuam operando pelo usuario local autenticado.
+
+O Legacy deve isolar essa compatibilidade em uma camada anticorrupcao propria, conceitualmente `app/CoreIntegration`, responsavel por client HTTP, DTOs, consumo de codigo, resolucao de vinculo, estabelecimento de sessao, erros de integracao e auditoria local. Controllers e componentes Livewire nao devem parsear payload CORE diretamente.
+
+O vinculo local entre `core_subject` e usuario Legacy deve ser tratado como estrutura local do Legacy, com unicidade por runtime/contexto ES/SP e sem usar email ou ID local Legacy como identidade global.
+
 ## Aposentadoria do Legacy
 
 A camada `LegacyCoreIdentityBridge` deve ser removivel sem alterar o modelo canonico do CORE.
@@ -146,4 +173,3 @@ Quando o Legacy for aposentado:
 - `users.company_id`, `company_user` e `employees -> contracts` nao devem ser promovidos a modelo CORE.
 - IDs locais podem colidir entre ES e SP.
 - O repositorio atual nao contem inventario, migrations ou Models para validacao de conflitos adicionais.
-
