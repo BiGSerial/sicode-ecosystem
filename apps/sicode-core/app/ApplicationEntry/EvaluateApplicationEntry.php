@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\ApplicationEntry;
 
+use App\ApplicationAccesses\ResolveEffectiveApplicationAccess;
 use App\Contracts\ResolveEffectiveContractApplicationGrant;
 use App\Models\Application;
-use App\Models\ApplicationAccess;
 use App\Models\ApplicationContext;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use App\Organizations\ResolveEffectiveOrganizationMembership;
 use Carbon\CarbonInterface;
-use Illuminate\Database\Eloquent\Builder;
 
 final class EvaluateApplicationEntry
 {
     public function __construct(
+        private readonly ResolveEffectiveApplicationAccess $resolveEffectiveApplicationAccess = new ResolveEffectiveApplicationAccess,
         private readonly ResolveEffectiveOrganizationMembership $resolveEffectiveOrganizationMembership = new ResolveEffectiveOrganizationMembership,
         private readonly ResolveEffectiveContractApplicationGrant $resolveEffectiveContractApplicationGrant = new ResolveEffectiveContractApplicationGrant,
     ) {}
@@ -47,11 +47,18 @@ final class EvaluateApplicationEntry
             return ApplicationEntryDecision::denied(ApplicationEntryReason::ContextNotActive);
         }
 
-        if (! $this->applicationAccessExists($user, $application, $context)) {
+        $applicationAccessDecision = ($this->resolveEffectiveApplicationAccess)(
+            user: $user,
+            application: $application,
+            context: $context,
+            at: $at,
+        );
+
+        if (! $applicationAccessDecision->granted) {
             return ApplicationEntryDecision::denied(ApplicationEntryReason::ApplicationAccessNotGranted);
         }
 
-        if (! $this->effectiveApplicationAccessExists($user, $application, $context, $at)) {
+        if (! $applicationAccessDecision->effective) {
             return ApplicationEntryDecision::denied(ApplicationEntryReason::ApplicationAccessNotEffective);
         }
 
@@ -97,46 +104,6 @@ final class EvaluateApplicationEntry
     private function applicationHasContexts(Application $application): bool
     {
         return $application->contexts()->exists();
-    }
-
-    private function applicationAccessExists(User $user, Application $application, ?ApplicationContext $context): bool
-    {
-        return $this->applicationAccessQuery($user, $application, $context)->exists();
-    }
-
-    private function effectiveApplicationAccessExists(
-        User $user,
-        Application $application,
-        ?ApplicationContext $context,
-        CarbonInterface $at,
-    ): bool {
-        return $this->applicationAccessQuery($user, $application, $context)
-            ->where('status', 'active')
-            ->where('starts_at', '<=', $at)
-            ->where(function (Builder $query) use ($at): void {
-                $query
-                    ->whereNull('ends_at')
-                    ->orWhere('ends_at', '>=', $at);
-            })
-            ->exists();
-    }
-
-    /**
-     * @return Builder<ApplicationAccess>
-     */
-    private function applicationAccessQuery(
-        User $user,
-        Application $application,
-        ?ApplicationContext $context,
-    ): Builder {
-        return ApplicationAccess::query()
-            ->where('user_id', $user->id)
-            ->where('application_id', $application->id)
-            ->when(
-                $context instanceof ApplicationContext,
-                fn (Builder $query): Builder => $query->where('context_id', $context->id),
-                fn (Builder $query): Builder => $query->whereNull('context_id'),
-            );
     }
 
     private function requiresOrganization(Application $application, ?ApplicationContext $context): bool

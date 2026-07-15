@@ -17,6 +17,8 @@ Inclui:
 - `Contract` efetivo;
 - `ContractApplicationGrant` efetivo.
 
+O ciclo de vida e a resolucao temporal de `ApplicationAccess` estao detalhados em `docs/architecture/core-application-access-lifecycle.md`.
+
 Exclui:
 
 - login;
@@ -155,7 +157,7 @@ Nao ha ordenacao por banco, `first()` arbitrario, `is_primary` inventado ou heur
 
 ## Access e Grant
 
-`ApplicationAccess` e direito individual de entrada.
+`ApplicationAccess` e direito individual de entrada e deve ser resolvido pelo capability canonico `ResolveEffectiveApplicationAccess`.
 
 `ContractApplicationGrant` e autorizacao institucional por contrato.
 
