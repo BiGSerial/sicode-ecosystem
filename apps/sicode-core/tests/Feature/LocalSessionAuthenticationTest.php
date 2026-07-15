@@ -53,7 +53,7 @@ class LocalSessionAuthenticationTest extends TestCase
         $user = $this->createUser();
         $this->setPassword($user);
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertNoContent();
@@ -69,7 +69,7 @@ class LocalSessionAuthenticationTest extends TestCase
         $this->withSession(['pre_login_marker' => 'present']);
         $previousSessionId = session()->getId();
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertNoContent();
@@ -84,7 +84,7 @@ class LocalSessionAuthenticationTest extends TestCase
         $user = $this->createUser();
         $credential = $this->setPassword($user);
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => 'wrong-local-password',
         ])->assertStatus(422);
@@ -105,13 +105,13 @@ class LocalSessionAuthenticationTest extends TestCase
         $identifier = 'rate-limit-'.Str::uuid().'@example.test';
 
         for ($attempt = 1; $attempt <= 5; $attempt++) {
-            $this->post('/login', [
+            $this->postJson('/login', [
                 'identifier' => $identifier,
                 'password' => $this->validPassword,
             ])->assertStatus(422);
         }
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $identifier,
             'password' => $this->validPassword,
         ])->assertTooManyRequests();
@@ -129,13 +129,13 @@ class LocalSessionAuthenticationTest extends TestCase
         $identifier = 'rate-limit-normalized-'.Str::uuid().'@example.test';
 
         for ($attempt = 1; $attempt <= 5; $attempt++) {
-            $this->post('/login', [
+            $this->postJson('/login', [
                 'identifier' => '  '.strtoupper($identifier).'  ',
                 'password' => $this->validPassword,
             ])->assertStatus(422);
         }
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $identifier,
             'password' => $this->validPassword,
         ])->assertTooManyRequests();
@@ -153,7 +153,7 @@ class LocalSessionAuthenticationTest extends TestCase
         $user = $this->createUser(status: 'blocked');
         $this->setPassword($user);
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertStatus(422);
@@ -175,7 +175,7 @@ class LocalSessionAuthenticationTest extends TestCase
 
         $this->assertSame(0, $user->organizationMemberships()->count());
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertNoContent();
@@ -188,7 +188,7 @@ class LocalSessionAuthenticationTest extends TestCase
         $user = $this->createUser();
         $this->setPassword($user);
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertNoContent();
@@ -203,7 +203,7 @@ class LocalSessionAuthenticationTest extends TestCase
         $user = $this->createUser();
         $this->setPassword($user);
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertNoContent();
@@ -223,12 +223,12 @@ class LocalSessionAuthenticationTest extends TestCase
         $user = $this->createUser();
         $this->setPassword($user);
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertNoContent();
 
-        $this->post('/logout')->assertNoContent();
+        $this->postJson('/logout')->assertNoContent();
 
         $this->assertNull(session(LocalSession::USER_ID_KEY));
 
@@ -245,14 +245,14 @@ class LocalSessionAuthenticationTest extends TestCase
         $user = $this->createUser();
         $this->setPassword($user);
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertNoContent();
 
         $authenticatedSessionId = session()->getId();
 
-        $this->post('/logout')->assertNoContent();
+        $this->postJson('/logout')->assertNoContent();
 
         $this->assertNotSame($authenticatedSessionId, session()->getId());
         $this->assertNull(session(LocalSession::USER_ID_KEY));
@@ -263,12 +263,12 @@ class LocalSessionAuthenticationTest extends TestCase
         $user = $this->createUser();
         $credential = $this->setPassword($user);
 
-        $this->post('/login', [
+        $this->postJson('/login', [
             'identifier' => $user->primary_email_normalized,
             'password' => $this->validPassword,
         ])->assertNoContent();
 
-        $this->post('/logout')->assertNoContent();
+        $this->postJson('/logout')->assertNoContent();
 
         CoreAuditEvent::query()
             ->whereIn('action', [
