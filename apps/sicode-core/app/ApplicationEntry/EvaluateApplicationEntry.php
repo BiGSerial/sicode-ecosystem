@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\ApplicationEntry;
 
+use App\Contracts\ResolveEffectiveContractApplicationGrant;
 use App\Models\Application;
 use App\Models\ApplicationAccess;
 use App\Models\ApplicationContext;
-use App\Models\Contract;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use App\Organizations\ResolveEffectiveOrganizationMembership;
@@ -18,6 +18,7 @@ final class EvaluateApplicationEntry
 {
     public function __construct(
         private readonly ResolveEffectiveOrganizationMembership $resolveEffectiveOrganizationMembership = new ResolveEffectiveOrganizationMembership,
+        private readonly ResolveEffectiveContractApplicationGrant $resolveEffectiveContractApplicationGrant = new ResolveEffectiveContractApplicationGrant,
     ) {}
 
     public function __invoke(
@@ -75,11 +76,18 @@ final class EvaluateApplicationEntry
             return ApplicationEntryDecision::allowed();
         }
 
-        if (! $this->effectiveContractExists($membershipResolution->membership, $at)) {
+        $contractGrantDecision = ($this->resolveEffectiveContractApplicationGrant)(
+            organization: $membershipResolution->membership->organization,
+            application: $application,
+            context: $context,
+            at: $at,
+        );
+
+        if (! $contractGrantDecision->contractAvailable) {
             return ApplicationEntryDecision::denied(ApplicationEntryReason::ContractNotEffective);
         }
 
-        if (! $this->effectiveGrantExists($membershipResolution->membership, $application, $context, $at)) {
+        if (! $contractGrantDecision->grantEffective) {
             return ApplicationEntryDecision::denied(ApplicationEntryReason::ContractApplicationGrantNotEffective);
         }
 
@@ -147,52 +155,5 @@ final class EvaluateApplicationEntry
         }
 
         return (bool) $application->requires_contract;
-    }
-
-    private function effectiveContractExists(OrganizationMembership $membership, CarbonInterface $at): bool
-    {
-        return $this->effectiveContractQuery($membership, $at)->exists();
-    }
-
-    private function effectiveGrantExists(
-        OrganizationMembership $membership,
-        Application $application,
-        ?ApplicationContext $context,
-        CarbonInterface $at,
-    ): bool {
-        return $this->effectiveContractQuery($membership, $at)
-            ->whereHas('applicationGrants', function (Builder $query) use ($application, $context, $at): void {
-                $query
-                    ->where('application_id', $application->id)
-                    ->when(
-                        $context instanceof ApplicationContext,
-                        fn (Builder $query): Builder => $query->where('context_id', $context->id),
-                        fn (Builder $query): Builder => $query->whereNull('context_id'),
-                    )
-                    ->where('status', 'active')
-                    ->where('starts_at', '<=', $at)
-                    ->where(function (Builder $query) use ($at): void {
-                        $query
-                            ->whereNull('ends_at')
-                            ->orWhere('ends_at', '>=', $at);
-                    });
-            })
-            ->exists();
-    }
-
-    /**
-     * @return Builder<Contract>
-     */
-    private function effectiveContractQuery(OrganizationMembership $membership, CarbonInterface $at): Builder
-    {
-        return Contract::query()
-            ->where('organization_id', $membership->organization_id)
-            ->where('status', 'active')
-            ->where('starts_at', '<=', $at)
-            ->where(function (Builder $query) use ($at): void {
-                $query
-                    ->whereNull('ends_at')
-                    ->orWhere('ends_at', '>=', $at);
-            });
     }
 }
