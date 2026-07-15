@@ -10,11 +10,16 @@ use App\Models\ApplicationContext;
 use App\Models\Contract;
 use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Organizations\ResolveEffectiveOrganizationMembership;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 
 final class EvaluateApplicationEntry
 {
+    public function __construct(
+        private readonly ResolveEffectiveOrganizationMembership $resolveEffectiveOrganizationMembership = new ResolveEffectiveOrganizationMembership,
+    ) {}
+
     public function __invoke(
         User $user,
         Application $application,
@@ -56,25 +61,25 @@ final class EvaluateApplicationEntry
             return ApplicationEntryDecision::allowed();
         }
 
-        $membershipResolution = $this->resolveEffectiveMembership($user, $at);
+        $membershipResolution = ($this->resolveEffectiveOrganizationMembership)($user, $at);
 
-        if ($membershipResolution === null) {
-            return ApplicationEntryDecision::denied(ApplicationEntryReason::OrganizationMembershipNotEffective);
+        if ($membershipResolution->ambiguous) {
+            return ApplicationEntryDecision::denied(ApplicationEntryReason::OrganizationMembershipAmbiguous);
         }
 
-        if ($membershipResolution === false) {
-            return ApplicationEntryDecision::denied(ApplicationEntryReason::OrganizationMembershipAmbiguous);
+        if (! $membershipResolution->resolved || ! $membershipResolution->membership instanceof OrganizationMembership) {
+            return ApplicationEntryDecision::denied(ApplicationEntryReason::OrganizationMembershipNotEffective);
         }
 
         if (! $requiresContract) {
             return ApplicationEntryDecision::allowed();
         }
 
-        if (! $this->effectiveContractExists($membershipResolution, $at)) {
+        if (! $this->effectiveContractExists($membershipResolution->membership, $at)) {
             return ApplicationEntryDecision::denied(ApplicationEntryReason::ContractNotEffective);
         }
 
-        if (! $this->effectiveGrantExists($membershipResolution, $application, $context, $at)) {
+        if (! $this->effectiveGrantExists($membershipResolution->membership, $application, $context, $at)) {
             return ApplicationEntryDecision::denied(ApplicationEntryReason::ContractApplicationGrantNotEffective);
         }
 
@@ -142,31 +147,6 @@ final class EvaluateApplicationEntry
         }
 
         return (bool) $application->requires_contract;
-    }
-
-    private function resolveEffectiveMembership(User $user, CarbonInterface $at): OrganizationMembership|false|null
-    {
-        $memberships = OrganizationMembership::query()
-            ->where('user_id', $user->id)
-            ->where('status', 'active')
-            ->where('started_at', '<=', $at)
-            ->where(function (Builder $query) use ($at): void {
-                $query
-                    ->whereNull('ended_at')
-                    ->orWhere('ended_at', '>=', $at);
-            })
-            ->limit(2)
-            ->get();
-
-        if ($memberships->isEmpty()) {
-            return null;
-        }
-
-        if ($memberships->count() > 1) {
-            return false;
-        }
-
-        return $memberships->first();
     }
 
     private function effectiveContractExists(OrganizationMembership $membership, CarbonInterface $at): bool

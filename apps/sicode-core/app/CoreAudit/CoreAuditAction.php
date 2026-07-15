@@ -26,6 +26,11 @@ enum CoreAuditAction: string
     case ExternalIdentityArchived = 'EXTERNAL_IDENTITY_ARCHIVED';
     case ExternalIdentityReconciled = 'EXTERNAL_IDENTITY_RECONCILED';
 
+    case OrganizationCreated = 'ORGANIZATION_CREATED';
+    case OrganizationSuspended = 'ORGANIZATION_SUSPENDED';
+    case OrganizationReactivated = 'ORGANIZATION_REACTIVATED';
+    case OrganizationDisabled = 'ORGANIZATION_DISABLED';
+
     case OrganizationMembershipCreated = 'ORGANIZATION_MEMBERSHIP_CREATED';
     case OrganizationMembershipActivated = 'ORGANIZATION_MEMBERSHIP_ACTIVATED';
     case OrganizationMembershipSuspended = 'ORGANIZATION_MEMBERSHIP_SUSPENDED';

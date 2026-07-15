@@ -163,6 +163,21 @@ class ApplicationEntryEvaluationTest extends TestCase
         );
     }
 
+    public function test_i2_denies_when_only_membership_belongs_to_inactive_organization(): void
+    {
+        $user = $this->createUser();
+        $application = $this->createCoreApplication(requiresOrganization: true);
+        $organization = $this->createOrganization(status: 'suspended');
+        $this->createAccess($user, $application);
+        $this->createMembership($user, $organization);
+
+        $this->assertDecision(
+            ApplicationEntryReason::OrganizationMembershipNotEffective,
+            false,
+            $this->evaluate($user, $application),
+        );
+    }
+
     public function test_j_denies_when_contract_is_required_and_no_contract_is_effective(): void
     {
         $user = $this->createUser();
@@ -417,14 +432,14 @@ class ApplicationEntryEvaluationTest extends TestCase
         ]);
     }
 
-    private function createOrganization(): Organization
+    private function createOrganization(string $status = 'active'): Organization
     {
         $this->sequence++;
 
         return Organization::create([
             'name' => 'Entry Organization '.$this->sequence,
             'legal_name' => 'Entry Organization '.$this->sequence.' Ltda',
-            'status' => 'active',
+            'status' => $status,
         ]);
     }
 
