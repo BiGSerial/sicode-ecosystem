@@ -51,6 +51,7 @@ docs/skills/
 └── workflow/
     ├── architecture-change.md
     ├── code-review.md
+    ├── project-management.md
     └── task-execution.md
 ```
 
@@ -64,4 +65,4 @@ docs/skills/
 - Seguranca, criptografia, secrets e logs: skills de `security/`.
 - Testes: skills de `testing/`.
 - Execucao de qualquer tarefa, review ou mudanca arquitetural: skills de `workflow/`.
-
+- Baixa de issue, fechamento de macroentrega, atualizacao de datas/status no GitHub Project ou manutencao de roadmap: `workflow/project-management.md`.

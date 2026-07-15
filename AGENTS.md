@@ -32,6 +32,7 @@ Antes de alterar codigo ou documentacao tecnica, identifique as skills aplicavei
 - seguranca: `docs/skills/security/secure-development.md`, `docs/skills/security/cryptography.md`, `docs/skills/security/secrets-management.md`, `docs/skills/security/secure-logging.md`
 - testes: `docs/skills/testing/testing-strategy.md`, `docs/skills/testing/database-testing.md`
 - workflow: `docs/skills/workflow/task-execution.md`, `docs/skills/workflow/code-review.md`, `docs/skills/workflow/architecture-change.md`
+- gestao de roadmap/Project/issues: `docs/skills/workflow/project-management.md`
 
 Nao crie padrao local concorrente quando existir skill normativa. Se uma skill conflitar com canon, ADR ou modelo aprovado, interrompa a implementacao e registre o conflito.
 
