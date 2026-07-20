@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Partner\Forms;
 
 use App\Models\WorkReport;
+use App\Services\Partner\WorkReportCompanyContext;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -52,6 +53,7 @@ class Reworkreports extends Workreports
 
         $this->workReport = WorkReport::query()
             ->with(['Note.Orders', 'Orders', 'Equipment', 'Meeters', 'Returnwork.User', 'Adsform'])
+            ->tap(fn ($query) => app(WorkReportCompanyContext::class)->applyToQuery($query))
             ->when(!auth()->user()->superadm, function ($q) {
                 $q->where(function ($query) {
                     $query->whereIn('company_id', auth()->user()->Companies->pluck('id')->toArray())
@@ -60,6 +62,8 @@ class Reworkreports extends Workreports
             })
             ->where('rejected', true)
             ->findOrFail((int) $payload['work_report_id']);
+
+        app(WorkReportCompanyContext::class)->assertCanUse($this->workReport);
 
         $this->note = $this->workReport->Note;
         $this->hasExistingAds = (bool) $this->workReport->Adsform;
@@ -187,6 +191,8 @@ class Reworkreports extends Workreports
         if (!$this->workReport || !$this->canInformNote($this->note)) {
             return;
         }
+
+        app(WorkReportCompanyContext::class)->assertCanUse($this->workReport);
 
         if ($this->changesBecameTrueOnReinform() && !$this->hasPendingAsbuilt) {
             $this->showMissingAsbuiltFeedbackForChangedProjectAnswer();

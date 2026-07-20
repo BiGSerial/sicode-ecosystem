@@ -115,6 +115,30 @@ Politica operacional aplicada:
 
 Testes especificos deste slice estao em `tests/Feature/ProductionCompanyContextTest.php`.
 
+## Terceiro slice: Informe de Obra operacional
+
+O terceiro slice de hardening foi limitado ao fluxo operacional do Informe de Obra (`work_reports`) em Partner:
+
+- criacao/envio em `Partner\Forms\Workreports`;
+- fila e detalhe de rejeitados em `Partner\WorkedRejectedList`;
+- reenvio em `Partner\Forms\Reworkreports`;
+- acao legada de reenvio em `Partner\Actions\WorkedReturnForm`.
+
+Foi criada a abstracao local `App\Services\Partner\WorkReportCompanyContext`.
+
+Politica aplicada:
+
+- `work_reports.company_id` continua apontando para `companies.id` local;
+- usuario comum preserva a regra Legacy de empresa contratual por `employees -> contracts -> company_id`;
+- `users.company_id` nao substitui contrato ausente no envio de Informe;
+- quando `CurrentCompanyContext` esta estabelecido, a empresa contratual ou selecionada deve coincidir com a empresa da sessao;
+- `form.company_id` enviado pelo browser e rejeitado quando diverge da sessao;
+- `WorkReport` de outra empresa e rejeitado antes de reenvio ou mutacao;
+- rotas operacionais `partner.report.workreport`, `partner.report.rejectedWorked` e `partner.report.reinformWorkreport` exigem `current.company`;
+- relatorios, exports, admin e consolidacoes batch permanecem fora do middleware.
+
+O inventario completo do modulo esta registrado em `docs/inventory/legacy/work-report-company-context-hardening.md`.
+
 ## Auditoria da suite Legacy
 
 | Arquivo | Trait ou operacao | Tabelas afetadas | Risco | Correcao recomendada |

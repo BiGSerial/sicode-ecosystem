@@ -365,10 +365,10 @@ Route::prefix('/partner')->controller(PartnerController::class)->name('partner.'
     Route::get('/todo-viability', 'viability')->name('todo.viability');
     // Route::get('/hired-viability', 'hired_viability')->name('hired.viability');
     Route::get('/historic-viability', 'historic_viab')->name('hist.viability');
-    Route::get('/workreport', 'workreport')->name('report.workreport');
+    Route::get('/workreport', 'workreport')->middleware('current.company')->name('report.workreport');
     Route::get('/workedlist', 'workedlist')->name('report.workedlist');
-    Route::get('/rejectedWorked', 'rejectedWorked')->name('report.rejectedWorked');
-    Route::get('/rejectedWorked/reinform/{token}', 'reinformWorkreport')->name('report.reinformWorkreport');
+    Route::get('/rejectedWorked', 'rejectedWorked')->middleware('current.company')->name('report.rejectedWorked');
+    Route::get('/rejectedWorked/reinform/{token}', 'reinformWorkreport')->middleware('current.company')->name('report.reinformWorkreport');
     Route::get('/rejected_viability_list', 'rejectedViabList')->name('rejected.viability');
     Route::get('/tacit_viab_list', 'tacitViabList')->name('tacit.viability');
     Route::get('/declared_eqipment', 'declaredEquipment')->name('declared.equipment');

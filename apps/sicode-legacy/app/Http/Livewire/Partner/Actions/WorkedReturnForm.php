@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Partner\Actions;
 
 use App\Models\Equipment;
 use App\Models\WorkReport;
+use App\Services\Partner\WorkReportCompanyContext;
 use Livewire\Component;
 
 class WorkedReturnForm extends Component
@@ -78,6 +79,7 @@ class WorkedReturnForm extends Component
         $this->workReport = $workReport;
 
         if ($this->workReport) {
+            app(WorkReportCompanyContext::class)->assertCanUse($this->workReport);
 
             $this->emitTo('files.partnersinform', 'cancel_files');
 
@@ -91,6 +93,8 @@ class WorkedReturnForm extends Component
 
     public function toSave()
     {
+        app(WorkReportCompanyContext::class)->assertCanUse($this->workReport);
+
         $this->dispatchBrowserEvent('alertar', [
             'title'         => 'ATUALIZAÇÃO DE INFORME',
             'msg'           => "<p class='fw-bold'>Você deseja submeter novamente o INFORME de OBRAS?</p>
@@ -116,6 +120,7 @@ class WorkedReturnForm extends Component
 
     public function save()
     {
+        app(WorkReportCompanyContext::class)->assertCanUse($this->workReport);
 
 
         unset($this->workReport->equipment);

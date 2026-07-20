@@ -176,6 +176,8 @@ Quando `users.company_id` apontar para empresa diferente daquela autorizada pelo
 
 Para fluxos operacionais do modulo Productions, a abstracao local especializada e `ProductionCompanyContext`. Ela nao substitui `CurrentCompanyContext`; ela consome esse contexto ja resolvido e aplica regras do modulo para leitura, criacao, transferencia, atribuicao, retorno, prioridade, reatribuicao e exclusao de `productions`.
 
+Para fluxos operacionais do modulo Informe de Obra, a abstracao local especializada e `WorkReportCompanyContext`. Ela consome `CurrentCompanyContext`, preserva a regra Legacy de empresa contratual em `employees -> contracts` para criacao comum e impede que `form.company_id` enviado pelo navegador ou tokens locais de reenvio atravessem empresas quando ha contexto empresarial estabelecido.
+
 `LegacyCompanyAccessResolver` e a camada Legacy responsavel por validar se o usuario local pode operar para uma `companies.id` local. As fontes aceitas sao exclusivamente estruturas Legacy (`users.company_id`, `company_user` e `employees -> contracts`). Essa validacao nao cria nem consulta vinculos CORE e nao pode ser usada como fallback quando o fluxo CORE nao encontrou `core_organization_links`.
 
 ### Contexto empresarial local
@@ -215,6 +217,8 @@ O padrao aprovado para o consumidor CORE e:
 O inventario semantico inicial de `company_id` esta registrado em `docs/inventory/legacy/company-id-semantic-inventory-2026-07-20.md`.
 
 O inventario especifico do hardening de Productions esta registrado em `docs/inventory/legacy/productions-company-context-hardening.md`.
+
+O inventario especifico do hardening de Informe de Obra esta registrado em `docs/inventory/legacy/work-report-company-context-hardening.md`.
 
 ## Aposentadoria do Legacy
 

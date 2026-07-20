@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Partner;
 
 use App\Models\WorkReport;
 use App\Models\ReturnWork;
+use App\Services\Partner\WorkReportCompanyContext;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -63,6 +64,7 @@ class WorkedRejectedList extends Component
     public function openRejectDetails(int $workReportId, ?int $startIndex = null)
     {
         $workReport = WorkReport::query()
+            ->tap(fn ($query) => app(WorkReportCompanyContext::class)->applyToQuery($query))
             ->when(!Auth()->User()->superadm, function ($q) {
                 $q->where(function ($subQuery) {
                     $subQuery->whereIn('company_id', Auth()->user()->Companies->pluck('id')->toArray())
@@ -78,6 +80,8 @@ class WorkedRejectedList extends Component
                 },
             ])
             ->findOrFail($workReportId);
+
+        app(WorkReportCompanyContext::class)->assertCanUse($workReport);
 
         $returnworks = $workReport->Returnwork->values()->map(function ($returnwork) {
             return [
@@ -132,6 +136,7 @@ class WorkedRejectedList extends Component
     public function getListsProperty()
     {
         $query = WorkReport::query()
+            ->tap(fn ($query) => app(WorkReportCompanyContext::class)->applyToQuery($query))
             ->when(!Auth()->User()->superadm, function ($q) {
                 $q->where(function ($subQuery) {
                     $subQuery->whereIn('company_id', Auth()->user()->Companies->pluck('id')->toArray())
@@ -201,8 +206,11 @@ class WorkedRejectedList extends Component
                     ->orWhere('company_id', Auth()->user()->Company->id);
             });
         })
+            ->tap(fn ($query) => app(WorkReportCompanyContext::class)->applyToQuery($query))
             ->where('rejected', true)
             ->findOrFail($workReportId);
+
+        app(WorkReportCompanyContext::class)->assertCanUse($workReport);
 
         $token = Str::random(48);
 

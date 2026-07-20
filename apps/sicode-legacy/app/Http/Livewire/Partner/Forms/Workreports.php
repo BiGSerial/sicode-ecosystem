@@ -6,8 +6,9 @@ use App\Models\Note;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\WorkReport;
-use App\Models\Company;
 use App\Services\Partner\BlockEvaluator;
+use App\Services\Partner\WorkReportCompanyContext;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -211,6 +212,21 @@ class Workreports extends Component
             return;
         }
 
+        try {
+            app(WorkReportCompanyContext::class)->companyIdForSubmission(
+                $this->form['company_id'] ? (string) $this->form['company_id'] : null,
+                $this->canSelectCompany
+            );
+        } catch (AuthorizationException $e) {
+            $this->dispatchBrowserEvent('swal', [
+                'position' => 'center',
+                'icon'     => 'warning',
+                'title'    => 'Empresa nao autorizada',
+                'html'     => 'O contexto empresarial atual nao permite enviar este informe.',
+            ]);
+            return;
+        }
+
         if ($this->canSelectCompany && empty($this->form['company_id'])) {
             $this->dispatchBrowserEvent('swal', [
                 'position' => 'center',
@@ -296,11 +312,21 @@ class Workreports extends Component
         }
 
         $this->form['note_id'] = $this->note->id;
-        if ($this->canSelectCompany) {
-            $this->form['company_id'] = $this->form['company_id'] ?: null;
-        } else {
-            $this->form['company_id'] = Auth()->User()->Employee->Contract->company->id;
+        $companyId = app(WorkReportCompanyContext::class)->companyIdForSubmission(
+            $this->form['company_id'] ? (string) $this->form['company_id'] : null,
+            $this->canSelectCompany
+        );
+
+        $existingWorkReport = WorkReport::query()
+            ->where('note_id', $this->form['note_id'])
+            ->where('canceled', false)
+            ->first();
+
+        if ($existingWorkReport) {
+            app(WorkReportCompanyContext::class)->assertCanUse($existingWorkReport);
         }
+
+        $this->form['company_id'] = $companyId;
         $this->form['user_id'] = Auth()->User()->id;
         $this->form['informed_at'] = date('Y-m-d H:i:s');
         $this->form['acceptance_at'] = date('Y-m-d H:i:s');
@@ -791,7 +817,8 @@ class Workreports extends Component
             return;
         }
 
-        $this->companies = Company::query()
+        $this->companies = app(WorkReportCompanyContext::class)
+            ->availableCompaniesQuery()
             ->orderByRaw('LOWER(name)')
             ->get(['id', 'name']);
     }
