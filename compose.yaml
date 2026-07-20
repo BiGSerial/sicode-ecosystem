@@ -57,6 +57,61 @@ services:
       timeout: 5s
       retries: 12
 
+  sicode-legacy:
+    build:
+      context: .
+      dockerfile: infra/docker/legacy/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./apps/sicode-legacy:/var/www/html
+    env_file:
+      - ./apps/sicode-legacy/.env.example
+    environment:
+      APP_ENV: local
+      APP_KEY: ${SICODE_LEGACY_APP_KEY:-base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=}
+      APP_URL: ${SICODE_LEGACY_APP_URL:-http://localhost:8083}
+      DB_CONNECTION: mysql
+      DB_HOST: sicode-legacy-mariadb
+      DB_PORT: 3306
+      DB_DATABASE: sicode_legacy
+      DB_USERNAME: sicode_legacy
+      DB_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
+      DB_LOG_HOST: sicode-legacy-mariadb
+      DB_LOG_PORT: 3306
+      DB_LOG_DATABASE: sicode_legacy_logs
+      DB_LOG_USERNAME: sicode_legacy
+      DB_LOG_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
+      CORE_LAUNCH_EXCHANGE_URL: http://sicode-core:8000/api/core/launch/exchange
+      CORE_LAUNCH_CLIENT_IDENTIFIER: ${SICODE_LEGACY_CORE_CLIENT_IDENTIFIER:-sicode-legacy-local}
+      CORE_LAUNCH_CLIENT_SECRET: ${SICODE_LEGACY_CORE_CLIENT_SECRET:-local_legacy_core_secret}
+    depends_on:
+      sicode-legacy-mariadb:
+        condition: service_healthy
+    ports:
+      - "${SICODE_LEGACY_HTTP_PORT:-8083}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1:8000/') === false ? 1 : 0);\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  sicode-legacy-mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: ${LOCAL_LEGACY_ROOT_PASSWORD:-legacy_root_password}
+      MARIADB_DATABASE: sicode_legacy
+      MARIADB_USER: sicode_legacy
+      MARIADB_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
+    volumes:
+      - sicode-legacy-mariadb-data:/var/lib/mysql
+    ports:
+      - "${SICODE_LEGACY_MARIADB_PORT:-3311}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   sicode-postgres:
     image: postgres:17-alpine
     environment:
@@ -88,8 +143,11 @@ services:
         condition: service_started
       sicodesk:
         condition: service_started
+      sicode-legacy:
+        condition: service_started
     ports:
       - "${CADDY_HTTP_PORT:-8090}:80"
 
 volumes:
   sicode-postgres-data:
+  sicode-legacy-mariadb-data:

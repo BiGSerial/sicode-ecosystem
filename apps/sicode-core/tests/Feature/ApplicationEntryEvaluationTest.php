@@ -51,7 +51,7 @@ class ApplicationEntryEvaluationTest extends TestCase
         $application = $this->createCoreApplication();
         $this->createAccess($user, $application);
 
-        $this->assertDecision(ApplicationEntryReason::Allowed, true, $this->evaluate($user, $application));
+        $this->assertDecision(ApplicationEntryReason::Allowed, true, $this->evaluate($user, $application), null);
     }
 
     public function test_b_denies_inactive_user_before_institutional_queries(): void
@@ -220,7 +220,12 @@ class ApplicationEntryEvaluationTest extends TestCase
         $this->createMembership($user, $organization);
         $this->createGrant($contract, $application, $context);
 
-        $this->assertDecision(ApplicationEntryReason::Allowed, true, $this->evaluate($user, $application, $context));
+        $this->assertDecision(
+            ApplicationEntryReason::Allowed,
+            true,
+            $this->evaluate($user, $application, $context),
+            $organization->id,
+        );
     }
 
     public function test_m_grant_for_es_does_not_authorize_sp(): void
@@ -326,7 +331,7 @@ class ApplicationEntryEvaluationTest extends TestCase
 
         $queries = $this->captureQueries(fn (): ApplicationEntryDecision => $this->evaluate($user, $application));
 
-        $this->assertDecision(ApplicationEntryReason::Allowed, true, $queries['decision']);
+        $this->assertDecision(ApplicationEntryReason::Allowed, true, $queries['decision'], null);
         $this->assertQueriesDoNotMention($queries['sql'], [
             'contracts',
             'contract_application_grants',
@@ -345,9 +350,11 @@ class ApplicationEntryEvaluationTest extends TestCase
         ApplicationEntryReason $reason,
         bool $allowed,
         ApplicationEntryDecision $decision,
+        ?string $authorizedOrganizationId = null,
     ): void {
         $this->assertSame($allowed, $decision->allowed);
         $this->assertSame($reason, $decision->reason);
+        $this->assertSame($authorizedOrganizationId, $decision->authorizedOrganizationId);
     }
 
     /**

@@ -7,6 +7,9 @@
         reverse_proxy sicodesk:8000
     }
 
+    handle_path /legacy/* {
+        reverse_proxy sicode-legacy:8000
+    }
+
     respond /health "ok" 200
 }
-

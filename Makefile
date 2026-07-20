@@ -1,7 +1,7 @@
 COMPOSE ?= docker compose
 CADDY_HTTP_PORT ?= 8090
 
-.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate
+.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-migrate
 
 up:
 	$(COMPOSE) up -d
@@ -19,6 +19,7 @@ health:
 	$(COMPOSE) ps
 	curl -fsS http://localhost:$(CADDY_HTTP_PORT)/core/health
 	curl -fsS http://localhost:$(CADDY_HTTP_PORT)/sicodesk/health
+	curl -fsS http://localhost:$(CADDY_HTTP_PORT)/legacy/
 
 core-shell:
 	$(COMPOSE) exec sicode-core bash
@@ -50,3 +51,12 @@ sicodesk-test:
 
 sicodesk-migrate:
 	$(COMPOSE) exec sicodesk php artisan migrate
+
+legacy-shell:
+	$(COMPOSE) exec sicode-legacy bash
+
+legacy-test:
+	$(COMPOSE) exec -e APP_ENV=testing sicode-legacy php artisan test --env=testing
+
+legacy-migrate:
+	$(COMPOSE) exec sicode-legacy php artisan migrate

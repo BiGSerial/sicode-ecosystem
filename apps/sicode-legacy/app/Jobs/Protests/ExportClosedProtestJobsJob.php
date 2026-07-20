@@ -1,0 +1,93 @@
+<?php
+
+namespace App\Jobs\Protests;
+
+use App\Exports\Protests\ClosedProtestJobsExport;
+use App\Models\User;
+use App\Notifications\SystemNotification;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+class ExportClosedProtestJobsJob implements ShouldQueue
+{
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+
+    public int $timeout = 120;
+    public $tries = 2;
+    public $backoff = [30, 120];
+
+    public function __construct(
+        protected array $filters,
+        protected string $userId
+    ) {
+        $this->onQueue('exports');
+    }
+
+    public function handle(): void
+    {
+        $user = User::find($this->userId);
+
+        if (!$user) {
+            return;
+        }
+
+        $filePath = 'exports/protests/' . now()->format('YmdHis') . '_jobs_fechados.xlsx';
+        $disk = Storage::disk('local');
+
+        try {
+            $disk->makeDirectory('exports/protests');
+            (new ClosedProtestJobsExport($this->filters))->store($filePath, 'local');
+
+            if (!$disk->exists($filePath)) {
+                throw new \RuntimeException('Arquivo nÇœo foi gerado no disco configurado.');
+            }
+
+            $user->notify(new SystemNotification(
+                titulo: 'Exportação concluída!',
+                mensagem: 'O relatório de histórico de jobs (concluídos e cancelados) foi gerado e está disponível para download.',
+                link: Storage::url($filePath),
+                status: 4,
+                extras: []
+            ));
+        } catch (\Throwable $e) {
+            Log::error('ExportClosedProtestJobsJob falhou', [
+                'user_id' => $this->userId,
+                'filters' => $this->filters,
+                'attempt' => $this->attempts(),
+                'error' => $e->getMessage(),
+            ]);
+
+            if ($disk->exists($filePath)) {
+                $disk->delete($filePath);
+            }
+
+            throw $e;
+        }
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $this->notifyFailure($exception->getMessage());
+    }
+
+    protected function notifyFailure(string $message): void
+    {
+        if ($user = User::find($this->userId)) {
+            $user->notify(new SystemNotification(
+                titulo: 'Erro na exportação',
+                mensagem: 'Não foi possível gerar o relatório solicitado. ' . $message,
+                link: null,
+                status: 5,
+                extras: []
+            ));
+        }
+    }
+}

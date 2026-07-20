@@ -44,7 +44,7 @@ Fluxo normativo:
 5. O callback Legacy valida presenca, formato, origem esperada e consistencia tecnica dos parametros. No lancamento iniciado pelo CORE Hub, o `state` e uma correlacao vinculada ao codigo no CORE; a validacao forte ocorre quando o Legacy envia o mesmo `state` na troca backend-to-backend e o CORE rejeita divergencias. Em fluxos futuros iniciados pela aplicacao consumidora, o Legacy tambem deve validar `state` contra valor local previamente armazenado.
 6. O Legacy troca o codigo com o CORE em canal backend-to-backend autenticado, enviando `code`, `state`, identificador do cliente e callback esperado.
 7. O CORE consome atomicamente o codigo e valida uso unico, validade temporal, cliente, aplicacao, contexto, callback e `state`.
-8. O CORE retorna identidade minima estavel: `issuer`, `core_subject`, aplicacao, contexto, `launch_id`, instante de emissao e expiracao. Claims de apresentacao, quando existirem, nao sao autoridade para vinculo local.
+8. O CORE retorna identidade minima estavel: `issuer`, `core_subject`, organizacao CORE autorizada quando aplicavel, aplicacao, contexto, `launch_id`, instante de emissao e expiracao. Claims de apresentacao, quando existirem, nao sao autoridade para vinculo local.
 9. O Legacy resolve `core_subject` para usuario local por uma camada anticorrupcao propria.
 10. O Legacy estabelece sua propria sessao Laravel 10 para o usuario local resolvido.
 11. O Legacy regenera a sessao local antes de redirecionar.
@@ -73,13 +73,16 @@ O payload de troca deve expor somente o necessario para a aplicacao consumidora 
 
 - `iss`: issuer estavel do CORE;
 - `core_subject`: identificador canonico estavel do usuario CORE;
+- `core_organization_id`: identificador canonico estavel da organizacao autorizada pelo `ApplicationEntry`, obrigatorio para consumidores/contextos que exigem organizacao ou contrato;
 - `application`: identificador canonico da aplicacao;
 - `context`: contexto operacional autorizado, como ES ou SP;
 - `launch_id`: correlacao tecnica auditavel;
 - `issued_at` e `expires_at`;
 - `state` ou confirmacao equivalente para validar a correlacao enviada no callback.
 
-O payload nao deve conter `legacy_user_id` como autoridade, permissao operacional local ou instrucao para trocar usuario local. Email, nome e atributos de exibicao podem existir futuramente apenas como claims informativas ou de reconciliacao controlada; depois do vinculo persistido, autenticacao local deve usar `core_subject`.
+O payload nao deve conter `legacy_user_id` como autoridade, permissao operacional local, contrato completo, grant completo, membership completo ou instrucao para trocar usuario local. Email, nome e atributos de exibicao podem existir futuramente apenas como claims informativas ou de reconciliacao controlada; depois do vinculo persistido, autenticacao local deve usar `core_subject`.
+
+Compatibilidade: consumidores antigos podem ignorar `core_organization_id` enquanto nao exigirem contexto empresarial local. O SICODE Legacy ES/SP, por depender de `companies.id` em tabelas operacionais, deve exigir esse campo e falhar de forma controlada quando ele nao vier ou nao possuir vinculo local.
 
 ## Camada anticorrupcao Legacy
 
@@ -91,7 +94,9 @@ Responsabilidades da camada:
 - DTO imutavel de identidade de lancamento;
 - acao de consumo do codigo;
 - repositorio de vinculos `core_subject` -> usuario Legacy;
+- repositorio de vinculos `core_organization_id` -> empresa local Legacy;
 - resolucao de usuario local a partir do `core_subject`;
+- resolucao de empresa local a partir de `core_organization_id`, aplicacao e contexto ES/SP;
 - estabelecimento da sessao Laravel 10 local;
 - erros de integracao com mensagens neutras;
 - auditoria local por allowlist.
@@ -124,6 +129,34 @@ Cardinalidade e invariantes:
 - `last_used_at` so deve ser atualizado apos troca backend-to-backend e sessao local bem-sucedidas.
 
 Esta ADR nao cria migration. A migration Legacy deve ser proposta em tarefa propria.
+
+## Vinculo local de organizacao
+
+O Legacy deve manter uma estrutura local conceitual `core_organization_links` para vincular a organizacao autorizada pelo CORE a uma empresa local historica.
+
+Campos conceituais recomendados:
+
+- identificador local do vinculo;
+- `core_issuer`;
+- `core_organization_id`;
+- contexto Legacy, como ES ou SP;
+- `company_id` local apontando para `companies.id`;
+- `linked_at`;
+- `last_used_at`;
+- status local do vinculo, como ativo ou revogado;
+- metadados minimos de auditoria.
+
+Cardinalidade e invariantes:
+
+- um `core_organization_id` ativo deve apontar para no maximo uma empresa local por runtime/contexto Legacy;
+- uma empresa local ativa deve apontar para no maximo uma organizacao CORE por runtime/contexto Legacy;
+- a mesma organizacao CORE pode possuir empresas locais distintas em ES e SP;
+- vinculo ativo duplicado deve bloquear autenticacao e exigir resolucao administrativa;
+- ausencia de vinculo deve falhar com resultado controlado equivalente a `OrganizationLinkRequired`;
+- `users.company_id` nao deve ser usado como fallback silencioso;
+- `productions.company_id`, `notes.company_id`, `work_reports.company_id` e tabelas operacionais equivalentes continuam armazenando exclusivamente `companies.id` local.
+
+O vinculo de identidade (`core_identity_links`) e o vinculo de organizacao (`core_organization_links`) sao independentes. Usuario vinculado nao implica organizacao vinculada.
 
 ## Estrategias de transicao
 

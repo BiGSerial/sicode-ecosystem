@@ -8,7 +8,7 @@ Este documento descreve a estrutura executavel inicial do monorepo.
 | --- | ---: | ---: | ---: | --- |
 | SICODE CORE | 13 | 4 | 8.4 | PostgreSQL |
 | SICODESK | 13 | 4 | 8.4 | PostgreSQL |
-| SICODE Legacy | 10 | 2 | compativel com o legado | conforme legado |
+| SICODE Legacy | 10 | 2 | 8.2 local | MariaDB 11 |
 
 Exemplos e comandos de uma stack nao devem ser aplicados automaticamente a outra.
 
@@ -45,7 +45,7 @@ Nao ha autoload cruzado entre aplicacoes.
 
 ## Legacy
 
-`apps/sicode-legacy` e reservado para importacao futura do codigo real. Nenhuma aplicacao Laravel 10 vazia foi gerada para simular o Legacy.
+`apps/sicode-legacy` contem o codigo Legacy real importado de `BiGSerial/SICODE2.git`. A execucao local usa PHP 8.2 e MariaDB 11 isolado no compose do monorepo.
 
 ## Bancos locais
 
@@ -54,7 +54,16 @@ O compose prepara dois bancos PostgreSQL independentes:
 - `sicode_core`;
 - `sicodesk`.
 
-O banco Legacy nao e configurado enquanto o codigo real e sua tecnologia de conexao nao forem confirmados.
+O Legacy importado usa MariaDB 11 local:
+
+- servico: `sicode-legacy-mariadb`;
+- banco padrao: `sicode_legacy`;
+- usuario padrao: `sicode_legacy`;
+- porta host padrao: `3311`;
+- app Legacy: `http://localhost:8083`;
+- via Caddy: `http://localhost:8090/legacy/`.
+
+As credenciais locais sao descartaveis e configuradas por variaveis do `compose.yaml`; nao versionar `.env` real.
 
 ## Fachada oficial
 
@@ -71,11 +80,19 @@ make core-test-pgsql
 make core-migrate
 make sicodesk-test
 make sicodesk-migrate
+make legacy-test
+make legacy-migrate
 make logs
 make down
 ```
 
-Comandos Legacy serao adicionados apenas quando o codigo real estiver integrado.
+Comandos Legacy disponiveis apos a importacao do codigo real:
+
+```bash
+make legacy-shell
+make legacy-migrate
+make legacy-test
+```
 
 ## Health checks
 

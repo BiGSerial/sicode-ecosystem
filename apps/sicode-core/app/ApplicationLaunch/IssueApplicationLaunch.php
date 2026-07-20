@@ -102,6 +102,7 @@ final class IssueApplicationLaunch
                 'token_hash' => $this->hashPublicValue($code),
                 'state_hash' => $this->hashPublicValue($state),
                 'callback_url' => $callbackUrl,
+                'authorized_organization_id' => $decision->authorizedOrganizationId,
                 'issued_at' => $at,
                 'expires_at' => $expiresAt,
             ]);

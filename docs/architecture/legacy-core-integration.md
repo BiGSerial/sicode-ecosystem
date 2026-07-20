@@ -149,13 +149,30 @@ CORE Hub
 -> normal Blade/Livewire 2 operation
 ```
 
-O Legacy deve receber o callback HTTP, validar parametros tecnicos, trocar o codigo com o CORE por backend-to-backend, resolver `core_subject` para usuario local, estabelecer sua propria sessao Laravel 10, regenerar a sessao e redirecionar somente para rota interna segura.
+O Legacy deve receber o callback HTTP, validar parametros tecnicos, trocar o codigo com o CORE por backend-to-backend, resolver `core_subject` para usuario local, resolver `core_organization_id` para empresa local, estabelecer sua propria sessao Laravel 10, regenerar a sessao e redirecionar somente para rota interna segura.
 
 Livewire 2 nao deve participar do protocolo de autenticacao ou lancamento. Depois da sessao local estabelecida, Blade e Livewire continuam operando pelo usuario local autenticado.
 
 O Legacy deve isolar essa compatibilidade em uma camada anticorrupcao propria, conceitualmente `app/CoreIntegration`, responsavel por client HTTP, DTOs, consumo de codigo, resolucao de vinculo, estabelecimento de sessao, erros de integracao e auditoria local. Controllers e componentes Livewire nao devem parsear payload CORE diretamente.
 
 O vinculo local entre `core_subject` e usuario Legacy deve ser tratado como estrutura local do Legacy, com unicidade por runtime/contexto ES/SP e sem usar email ou ID local Legacy como identidade global.
+
+O vinculo local entre organizacao CORE e empresa Legacy deve ser tratado por estrutura separada, conceitualmente `core_organization_links`:
+
+```text
+CORE organization
+-> core_organization_links
+-> companies.id local
+-> contexto empresarial efetivo do Legacy
+```
+
+`core_identity_links` e `core_organization_links` possuem responsabilidades distintas. O usuario estar vinculado ao CORE nao implica que a organizacao autorizada esteja vinculada a uma empresa local.
+
+`users.company_id`, `company_user` e `employees -> contracts` permanecem estruturas Legacy. Elas nao devem ser usadas para inferir silenciosamente a organizacao CORE nem como fallback quando `core_organization_links` estiver ausente.
+
+Depois da autenticacao e resolucao organizacional, o Legacy deve materializar uma abstracao local de contexto empresarial, como `CurrentCompanyContext`. Controllers, services e componentes Livewire 2 devem consumir essa abstracao para obter a empresa autorizada do fluxo atual, sem interpretar payload CORE diretamente nem espalhar acesso cru a sessao.
+
+Quando `users.company_id` apontar para empresa diferente daquela autorizada pelo launch CORE, o Legacy deve tratar a divergencia explicitamente. A politica segura inicial e rejeitar o lancamento, sem alterar `users.company_id` e sem autenticar silenciosamente em empresa divergente. Uma politica de atuacao contextual sem mudar a empresa principal exige decisao administrativa/documental posterior.
 
 ## Aposentadoria do Legacy
 

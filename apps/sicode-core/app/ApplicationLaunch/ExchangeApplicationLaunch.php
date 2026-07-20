@@ -104,6 +104,7 @@ final class ExchangeApplicationLaunch
             return new ApplicationLaunchExchangeResult(
                 issuer: (string) config('core_launch.issuer', 'sicode-core'),
                 coreSubject: $launch->user_id,
+                coreOrganizationId: $launch->authorized_organization_id,
                 application: $launch->application->code,
                 context: $launch->context?->code,
                 launchId: $launch->id,

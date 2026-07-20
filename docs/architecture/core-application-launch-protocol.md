@@ -47,6 +47,7 @@ Persistencia:
 - `user_id`;
 - `application_id`;
 - `context_id`;
+- `authorized_organization_id`;
 - `client_id`;
 - `callback_url`;
 - `issued_at`;
@@ -131,6 +132,7 @@ Formato:
 {
   "iss": "sicode-core",
   "core_subject": "uuid-do-user-core",
+  "core_organization_id": "uuid-da-organizacao-core-ou-null",
   "application": "codigo-da-aplicacao",
   "context": "codigo-do-contexto-ou-null",
   "launch_id": "uuid-do-artefato",
@@ -140,7 +142,20 @@ Formato:
 }
 ```
 
-`core_subject` e o UUID canonico do usuario CORE. E-mail, username, permissoes, grants, contratos, senha, hash de senha, credenciais locais e cookies de sessao nao sao retornados.
+`core_subject` e o UUID canonico do usuario CORE. `core_organization_id` e o UUID da organizacao autorizada pelo `ApplicationEntry` quando a entrada exige organizacao ou contrato; caso a aplicacao/contexto nao possua requisito organizacional, o valor pode ser `null`.
+
+E-mail, username, permissoes, grants, contratos, memberships completos, senha, hash de senha, credenciais locais e cookies de sessao nao sao retornados.
+
+Aplicacoes consumidoras devem usar `core_organization_id` apenas para resolver uma estrutura local propria de vinculo organizacional. No Legacy, isso significa:
+
+```text
+core_organization_id
+-> core_organization_links
+-> companies.id local
+-> contexto empresarial efetivo da sessao Legacy
+```
+
+O consumidor nao deve inferir organizacao por e-mail, `users.company_id`, nome de empresa, dominio de e-mail ou parametro enviado pelo navegador.
 
 ## Auditoria
 
@@ -189,13 +204,20 @@ A auditoria interna preserva motivo tecnico por allowlist. A resposta publica na
 | Email usado como identidade | Resposta usa `core_subject`. |
 | Serializacao acidental de Model | Resposta usa `ApplicationLaunchExchangeResult`. |
 
+## Implementacao Legacy
+
+O consumidor inicial Laravel 10 Legacy foi implementado com:
+
+- `core_identity_links` para resolver `core_subject` para usuario Legacy;
+- `core_organization_links` para resolver `core_organization_id + contexto` para `companies.id`;
+- `CurrentCompanyContext` para materializar a empresa local da sessao;
+- rejeicao controlada quando o vinculo organizacional nao existe;
+- rejeicao explicita quando `users.company_id` diverge da empresa autorizada pelo launch.
+
 ## Limites atuais
 
-Ainda nao implementado:
+Ainda fora desta etapa:
 
-- consumidor Laravel 10 Legacy;
-- `core_identity_links`;
-- sessao Legacy;
 - OAuth/OIDC;
 - JWT;
 - rotação automatica de secrets;

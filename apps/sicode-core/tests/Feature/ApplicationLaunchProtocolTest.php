@@ -14,8 +14,10 @@ use App\LocalAuthentication\LocalSession;
 use App\Models\Application as CoreApplication;
 use App\Models\ApplicationAccess;
 use App\Models\ApplicationClient;
+use App\Models\ApplicationContext;
 use App\Models\ApplicationLaunch;
 use App\Models\CoreAuditEvent;
+use App\Models\Organization;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -157,6 +159,7 @@ class ApplicationLaunchProtocolTest extends TestCase
         $response->assertJson([
             'iss' => 'sicode-core',
             'core_subject' => $user->id,
+            'core_organization_id' => null,
             'application' => $launch->application->code,
             'context' => null,
             'launch_id' => $launch->id,
@@ -167,6 +170,7 @@ class ApplicationLaunchProtocolTest extends TestCase
         $this->assertSame([
             'iss',
             'core_subject',
+            'core_organization_id',
             'application',
             'context',
             'launch_id',
@@ -181,6 +185,49 @@ class ApplicationLaunchProtocolTest extends TestCase
         $this->assertDatabaseHas('core_audit_events', [
             'action' => CoreAuditAction::ApplicationLaunchExchanged->value,
             'subject_id' => $launch->id,
+        ]);
+    }
+
+    public function test_exchange_returns_authorized_core_organization_for_institutional_launch(): void
+    {
+        $user = $this->createUser();
+        $application = $this->createCoreApplication(requiresOrganization: true);
+        $context = $this->createContext(
+            $application,
+            'es',
+            requiresOrganization: true,
+            requiresContract: false,
+        );
+        $organization = $this->createOrganization();
+        $client = $this->createApplicationClient($application, context: $context);
+        $this->grantAccess($user, $application, $context);
+        $this->createMembership($user, $organization);
+        $this->configureSecret($client, 'consumer-secret');
+
+        $redirect = app(IssueApplicationLaunch::class)(
+            user: $user,
+            application: $application,
+            context: $context,
+            at: $this->at,
+        );
+
+        $response = $this->postJson('/api/core/launch/exchange', [
+            'client_identifier' => $client->client_identifier,
+            'client_secret' => 'consumer-secret',
+            'code' => $redirect->code,
+            'state' => $redirect->state,
+        ])->assertOk();
+
+        $response->assertJson([
+            'core_subject' => $user->id,
+            'core_organization_id' => $organization->id,
+            'application' => $application->code,
+            'context' => 'es',
+        ]);
+
+        $this->assertDatabaseHas('application_launches', [
+            'id' => $redirect->launchId,
+            'authorized_organization_id' => $organization->id,
         ]);
     }
 
@@ -339,7 +386,12 @@ class ApplicationLaunchProtocolTest extends TestCase
         ]);
     }
 
-    private function createCoreApplication(?string $name = null, string $status = 'active'): CoreApplication
+    private function createCoreApplication(
+        ?string $name = null,
+        string $status = 'active',
+        bool $requiresOrganization = false,
+        bool $requiresContract = false,
+    ): CoreApplication
     {
         $this->sequence++;
 
@@ -347,14 +399,41 @@ class ApplicationLaunchProtocolTest extends TestCase
             'code' => 'launch-app-'.$this->sequence,
             'name' => $name ?? 'Launch App '.$this->sequence,
             'status' => $status,
-            'requires_organization' => false,
-            'requires_contract' => false,
+            'requires_organization' => $requiresOrganization,
+            'requires_contract' => $requiresContract,
+        ]);
+    }
+
+    private function createContext(
+        CoreApplication $application,
+        string $code,
+        ?bool $requiresOrganization = null,
+        ?bool $requiresContract = null,
+    ): ApplicationContext {
+        return $application->contexts()->create([
+            'code' => $code,
+            'name' => strtoupper($code),
+            'status' => 'active',
+            'requires_organization' => $requiresOrganization,
+            'requires_contract' => $requiresContract,
+        ]);
+    }
+
+    private function createOrganization(): Organization
+    {
+        $this->sequence++;
+
+        return Organization::create([
+            'name' => 'Launch Organization '.$this->sequence,
+            'legal_name' => 'Launch Organization '.$this->sequence.' Ltda',
+            'status' => 'active',
         ]);
     }
 
     private function createApplicationClient(
         CoreApplication $application,
         ?string $callbackUrl = null,
+        ?ApplicationContext $context = null,
     ): ApplicationClient {
         $this->sequence++;
 
@@ -365,6 +444,7 @@ class ApplicationLaunchProtocolTest extends TestCase
             'status' => 'active',
         ]);
         $client->application()->associate($application);
+        $client->context()->associate($context);
         $client->save();
 
         $quotedCallback = DB::getPdo()->quote($callbackUrl ?? 'https://consumer.example.test/callback/'.$this->sequence);
@@ -376,6 +456,16 @@ class ApplicationLaunchProtocolTest extends TestCase
         return $client->refresh();
     }
 
+    private function createMembership(User $user, Organization $organization): void
+    {
+        $membership = $user->organizationMemberships()->make([
+            'status' => 'active',
+            'started_at' => $this->at->subDay(),
+        ]);
+        $membership->organization()->associate($organization);
+        $membership->save();
+    }
+
     private function configureSecret(ApplicationClient $client, string $secret): void
     {
         config([
@@ -385,12 +475,16 @@ class ApplicationLaunchProtocolTest extends TestCase
         ]);
     }
 
-    private function grantAccess(User $user, CoreApplication $application): ApplicationAccess
+    private function grantAccess(
+        User $user,
+        CoreApplication $application,
+        ?ApplicationContext $context = null,
+    ): ApplicationAccess
     {
         return app(GrantApplicationAccess::class)(
             user: $user,
             application: $application,
-            context: null,
+            context: $context,
             startsAt: $this->at->subDay(),
             endsAt: null,
             actorType: CoreAuditActorType::System,

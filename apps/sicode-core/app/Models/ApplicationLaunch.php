@@ -12,6 +12,7 @@ class ApplicationLaunch extends CoreModel
         'token_hash',
         'state_hash',
         'callback_url',
+        'authorized_organization_id',
         'issued_at',
         'expires_at',
         'consumed_at',
@@ -39,6 +40,14 @@ class ApplicationLaunch extends CoreModel
     public function context(): BelongsTo
     {
         return $this->belongsTo(ApplicationContext::class, 'context_id');
+    }
+
+    /**
+     * @return BelongsTo<Organization, $this>
+     */
+    public function authorizedOrganization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'authorized_organization_id');
     }
 
     /**

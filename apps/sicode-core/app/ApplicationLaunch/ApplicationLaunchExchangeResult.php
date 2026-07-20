@@ -11,6 +11,7 @@ final readonly class ApplicationLaunchExchangeResult
     public function __construct(
         public string $issuer,
         public string $coreSubject,
+        public ?string $coreOrganizationId,
         public string $application,
         public ?string $context,
         public string $launchId,
@@ -23,6 +24,7 @@ final readonly class ApplicationLaunchExchangeResult
      * @return array{
      *     iss: string,
      *     core_subject: string,
+     *     core_organization_id: string|null,
      *     application: string,
      *     context: string|null,
      *     launch_id: string,
@@ -36,6 +38,7 @@ final readonly class ApplicationLaunchExchangeResult
         return [
             'iss' => $this->issuer,
             'core_subject' => $this->coreSubject,
+            'core_organization_id' => $this->coreOrganizationId,
             'application' => $this->application,
             'context' => $this->context,
             'launch_id' => $this->launchId,

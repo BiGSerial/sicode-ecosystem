@@ -80,7 +80,7 @@ final class EvaluateApplicationEntry
         }
 
         if (! $requiresContract) {
-            return ApplicationEntryDecision::allowed();
+            return ApplicationEntryDecision::allowed($membershipResolution->membership->organization_id);
         }
 
         $contractGrantDecision = ($this->resolveEffectiveContractApplicationGrant)(
@@ -98,7 +98,7 @@ final class EvaluateApplicationEntry
             return ApplicationEntryDecision::denied(ApplicationEntryReason::ContractApplicationGrantNotEffective);
         }
 
-        return ApplicationEntryDecision::allowed();
+        return ApplicationEntryDecision::allowed($membershipResolution->membership->organization_id);
     }
 
     private function applicationHasContexts(Application $application): bool
