@@ -174,6 +174,42 @@ Depois da autenticacao e resolucao organizacional, o Legacy deve materializar um
 
 Quando `users.company_id` apontar para empresa diferente daquela autorizada pelo launch CORE, o Legacy deve tratar a divergencia explicitamente. A politica segura inicial e rejeitar o lancamento, sem alterar `users.company_id` e sem autenticar silenciosamente em empresa divergente. Uma politica de atuacao contextual sem mudar a empresa principal exige decisao administrativa/documental posterior.
 
+### Contexto empresarial local
+
+`CurrentCompanyContext` encapsula as chaves de sessao usadas pela integracao e expoe apenas operacoes de dominio:
+
+- `isEstablished()`;
+- `requireEstablished()`;
+- `companyId()`;
+- `company()` / `requireCompany()`;
+- `coreOrganizationId()`;
+- `applicationContext()`;
+- `source()`;
+- `clear()`.
+
+Origens permitidas:
+
+- `core`: materializada exclusivamente de `core_organization_links` apos exchange backend-to-backend;
+- `legacy`: compatibilidade temporaria do login local, materializada a partir de `users.company_id`.
+
+O contexto de origem `legacy` nao cria vinculos CORE e nao deve ser usado como fallback quando o fluxo entrou pelo CORE. O logout local deve limpar explicitamente o contexto, e uma nova autenticacao deve sobrescrever qualquer contexto anterior.
+
+Rotas que dependem obrigatoriamente de empresa ativa podem usar o middleware `current.company`. Ele nao e global e nao deve ser aplicado a login, logout, callback CORE, rotas publicas, reconciliacao, administracao multempresa ou consultas historicas sem escopo empresarial unico.
+
+### Testes sobre dump restaurado
+
+A base `sicode_legacy` restaurada e considerada base oficial de integracao com dados representativos. Testes CORE -> Legacy sobre essa base nao podem usar `RefreshDatabase`, `DatabaseMigrations`, truncates globais, `migrate:fresh`, `db:wipe`, drops ou seeds destrutivos.
+
+O padrao aprovado para o consumidor CORE e:
+
+- `LEGACY_TEST_DATABASE_ALLOWED=true` explicito no comando;
+- allowlist de conexao, host e nome de banco;
+- `DatabaseTransactions` para rollback por teste;
+- fixtures com prefixo `TEST_CORE_LAUNCH_` e UUIDs randomicos;
+- verificacao objetiva de contagens antes/depois.
+
+O inventario semantico inicial de `company_id` esta registrado em `docs/inventory/legacy/company-id-semantic-inventory-2026-07-20.md`.
+
 ## Aposentadoria do Legacy
 
 A camada `LegacyCoreIdentityBridge` deve ser removivel sem alterar o modelo canonico do CORE.

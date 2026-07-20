@@ -34,7 +34,7 @@ final class ConsumeCoreLaunch
         request()->session()->put('core_launch.identity_link_id', $identityLink->id);
         request()->session()->put('core_launch.launch_id', $identity->launchId);
 
-        $this->currentCompanyContext->set($organizationLink, $identity->context);
+        $this->currentCompanyContext->establishFromCoreLaunch($organizationLink, $identity->context);
 
         $identityLink->forceFill(['last_used_at' => now()])->save();
         $organizationLink->forceFill(['last_used_at' => now()])->save();

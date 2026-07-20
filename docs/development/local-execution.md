@@ -94,6 +94,14 @@ make legacy-migrate
 make legacy-test
 ```
 
+Testes de integracao CORE -> Legacy sobre a base restaurada `sicode_legacy` exigem autorizacao explicita para evitar execucao acidental contra banco incorreto:
+
+```bash
+docker compose exec -T -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true sicode-legacy php artisan test tests/Feature/CoreLaunchConsumerTest.php --env=testing
+```
+
+Esses testes devem usar transacoes ou limpeza seletiva. Nao use `RefreshDatabase`, `DatabaseMigrations`, `migrate:fresh`, `db:wipe`, truncates globais ou drops contra `sicode_legacy`.
+
 ## Health checks
 
 Via Caddy:

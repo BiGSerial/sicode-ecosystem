@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Auth;
 
+use App\CoreIntegration\CurrentCompanyContext;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -46,6 +47,8 @@ class Login extends Component
 
         if (Auth::attempt($credentials, $remember)) {
             session()->regenerate();
+            app(CurrentCompanyContext::class)->establishFromLegacyUser(Auth::user());
+            session()->put('core_launch.auth_source', 'legacy');
 
             $this->msg = "REDIRECIONANDO... ";
 
