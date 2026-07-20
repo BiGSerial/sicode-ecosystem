@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Production\Actions;
 
 use App\Models\{Notetimeline, Production};
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class Reattribute extends Component
@@ -23,6 +24,8 @@ class Reattribute extends Component
 
     public function ask_reatt()
     {
+        app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
         $this->dispatchBrowserEvent('alertar', [
             'title'         => 'Re-atribuir',
             'msg'           => "Você deseja reatribuir a Nota/Ov <strong>{$this->production->load('note')->Note->note}</strong> para <strong>{$this->production->load('User')->User->name}</strong>?",
@@ -40,6 +43,8 @@ class Reattribute extends Component
     public function confirm_reatt($chave)
     {
         if ($this->chave === $chave) {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
             if ($this->production->update(['status' => 2, 'completed' => false])) {
                 $this->emit('refresh_list');
 

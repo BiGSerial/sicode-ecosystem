@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Production\Actions;
 
 use App\Models\SicodeSql\Production as SicodeSqlProduction;
 use App\Models\{Analise, Notetimeline, Prodtransfer, Production, Wpa};
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class Delete extends Component
@@ -25,6 +26,7 @@ class Delete extends Component
 
     public function to_delete()
     {
+        app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
         $this->dispatchBrowserEvent('alertar', [
             'title' => 'REMOVER DESPACHO',
@@ -46,6 +48,7 @@ class Delete extends Component
         if ($chave === $this->chave) {
 
             $production = $this->production;
+            app(ProductionCompanyContext::class)->assertCanUse($production);
 
             if ($this->production->delete()) {
 

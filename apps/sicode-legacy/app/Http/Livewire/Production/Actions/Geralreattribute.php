@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Production\Actions;
 
 use App\Models\{Notetimeline, Production, ProjectReviewDraft};
+use App\Services\Production\ProductionCompanyContext;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -24,6 +25,8 @@ class Geralreattribute extends Component
 
     public function ask_reatt()
     {
+        app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
         $context = $this->getProjectReviewReturnContext();
         $note = $this->production->load('Note')->Note->note ?? '---';
         $user = $this->production->load('User')->User->name ?? '---';
@@ -65,6 +68,8 @@ class Geralreattribute extends Component
     public function confirm_reatt($chave)
     {
         if ($this->chave === $chave) {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
             $analysisRemoved = false;
             $updated = false;
 

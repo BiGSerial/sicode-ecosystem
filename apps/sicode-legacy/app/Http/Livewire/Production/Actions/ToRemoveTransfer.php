@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Production\Actions;
 
 use App\Models\Production;
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class ToRemoveTransfer extends Component
@@ -20,6 +21,7 @@ class ToRemoveTransfer extends Component
         $this->production = $production;
 
         if ($this->production) {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
             $this->dispatchBrowserEvent('alertar', [
                 'title'         => 'Cancelar Transferência',
@@ -41,6 +43,8 @@ class ToRemoveTransfer extends Component
     public function executeRemoveTransfer()
     {
         try {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
             $this->production->Transfer()->where('status', 19)->delete();
             $this->production->update([
                 'status' => 2,

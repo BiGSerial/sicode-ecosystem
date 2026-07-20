@@ -100,6 +100,12 @@ Testes de integracao CORE -> Legacy sobre a base restaurada `sicode_legacy` exig
 docker compose exec -T -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true sicode-legacy php artisan test tests/Feature/CoreLaunchConsumerTest.php --env=testing
 ```
 
+Para validar o contrato CORE -> Legacy e o hardening operacional de Productions em conjunto:
+
+```bash
+docker compose exec -T -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true sicode-legacy php artisan test tests/Unit/LegacyDumpDatabaseGuardTest.php tests/Feature/CoreLaunchConsumerTest.php tests/Feature/ProductionCompanyContextTest.php --env=testing
+```
+
 Esses testes devem usar transacoes ou limpeza seletiva. Nao use `RefreshDatabase`, `DatabaseMigrations`, `migrate:fresh`, `db:wipe`, truncates globais ou drops contra `sicode_legacy`.
 
 ## Health checks

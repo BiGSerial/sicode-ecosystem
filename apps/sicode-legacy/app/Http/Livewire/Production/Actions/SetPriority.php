@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Production\Actions;
 use App\Models\Priority;
 use App\Models\Production;
 use App\Notifications\SystemNotification;
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class SetPriority extends Component
@@ -25,6 +26,7 @@ class SetPriority extends Component
         $this->production = $production;
 
         if ($this->production) {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
             $action = $this->production->priority ? 'REMOVER' : 'DEFINIR';
 
 
@@ -66,6 +68,8 @@ class SetPriority extends Component
         }
 
         try {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
             $this->production->update([
                 'priority' => !$this->production->priority,
             ]);

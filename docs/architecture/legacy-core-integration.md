@@ -174,6 +174,10 @@ Depois da autenticacao e resolucao organizacional, o Legacy deve materializar um
 
 Quando `users.company_id` apontar para empresa diferente daquela autorizada pelo launch CORE, o Legacy deve tratar a divergencia explicitamente. A politica segura inicial e rejeitar o lancamento, sem alterar `users.company_id` e sem autenticar silenciosamente em empresa divergente. Uma politica de atuacao contextual sem mudar a empresa principal exige decisao administrativa/documental posterior.
 
+Para fluxos operacionais do modulo Productions, a abstracao local especializada e `ProductionCompanyContext`. Ela nao substitui `CurrentCompanyContext`; ela consome esse contexto ja resolvido e aplica regras do modulo para leitura, criacao, transferencia, atribuicao, retorno, prioridade, reatribuicao e exclusao de `productions`.
+
+`LegacyCompanyAccessResolver` e a camada Legacy responsavel por validar se o usuario local pode operar para uma `companies.id` local. As fontes aceitas sao exclusivamente estruturas Legacy (`users.company_id`, `company_user` e `employees -> contracts`). Essa validacao nao cria nem consulta vinculos CORE e nao pode ser usada como fallback quando o fluxo CORE nao encontrou `core_organization_links`.
+
 ### Contexto empresarial local
 
 `CurrentCompanyContext` encapsula as chaves de sessao usadas pela integracao e expoe apenas operacoes de dominio:
@@ -209,6 +213,8 @@ O padrao aprovado para o consumidor CORE e:
 - verificacao objetiva de contagens antes/depois.
 
 O inventario semantico inicial de `company_id` esta registrado em `docs/inventory/legacy/company-id-semantic-inventory-2026-07-20.md`.
+
+O inventario especifico do hardening de Productions esta registrado em `docs/inventory/legacy/productions-company-context-hardening.md`.
 
 ## Aposentadoria do Legacy
 

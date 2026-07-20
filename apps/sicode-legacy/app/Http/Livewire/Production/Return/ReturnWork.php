@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Production\Return;
 use App\Models\Production;
 use App\Models\ReturnWork as ModelsReturnWork;
 use App\Helpers\TextValidator;
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class ReturnWork extends Component
@@ -35,6 +36,8 @@ class ReturnWork extends Component
     public function toReturn(Production $production)
     {
         $this->production = $production;
+
+        app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
 
 
@@ -85,6 +88,7 @@ class ReturnWork extends Component
     public function save()
     {
         try {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
             $this->production->Note->WorkForm->update([
                 'rejected' => true,

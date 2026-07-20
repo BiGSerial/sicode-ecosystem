@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Production;
 use App\Models\Service;
+use App\Services\Production\ProductionCompanyContext;
 use Illuminate\Http\Request;
 
 class ServicesController extends Controller
@@ -33,6 +34,8 @@ class ServicesController extends Controller
             ->where('id', $request->route('prod'))
             ->where('service_id', $service->uuid)
             ->firstOrFail();
+
+        app(ProductionCompanyContext::class)->assertCanUse($production);
 
         // Rota dedicada para abrir uma produção específica a partir de notificações.
         // Para Desenho, redireciona para a fila principal com abertura direta do chat/view.

@@ -2,12 +2,11 @@
 
 namespace App\Http\Livewire\Production\Actions;
 
-use App\CoreIntegration\CurrentCompanyContext;
-use App\CoreIntegration\OrganizationLinkRequired;
 use App\Http\Livewire\Concerns\UsesCurrentCompanyContext;
 use App\Models\Company;
 use App\Models\Production;
 use App\Models\User;
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class NewProduction extends Component
@@ -40,6 +39,7 @@ class NewProduction extends Component
 
 
         if ($this->production) {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
             $this->companies = Company::whereRelation('contracts.services', function ($q) {
                 $q->where('uuid', $this->production->service_id);
@@ -68,7 +68,7 @@ class NewProduction extends Component
         $this->userSelected = null;
 
         if ($this->currentCompanyContext()->isEstablished()) {
-            $this->currentCompanyContext()->ensureCompanyId((string) $value);
+            app(ProductionCompanyContext::class)->effectiveCompanyId((string) $value);
         }
 
         $this->users = User::whereRelation('ToServices', function ($q) {
@@ -160,7 +160,8 @@ class NewProduction extends Component
     public function executeTransferProduction()
     {
         try {
-            $companyId = $this->resolveOperationalCompanyId();
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+            $companyId = app(ProductionCompanyContext::class)->effectiveCompanyId((string) $this->companySelected);
 
             $this->production->update([
                 'user_id' => $this->userSelected,
@@ -203,7 +204,8 @@ class NewProduction extends Component
 
 
         try {
-            $companyId = $this->resolveOperationalCompanyId();
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+            $companyId = app(ProductionCompanyContext::class)->effectiveCompanyId((string) $this->companySelected);
 
             Production::create([
                 'note_id' => $this->production->note_id,
@@ -265,25 +267,5 @@ class NewProduction extends Component
     public function render()
     {
         return view('livewire.production.actions.new-production');
-    }
-
-    private function resolveOperationalCompanyId(): string
-    {
-        $companyId = (string) $this->companySelected;
-        $context = app(CurrentCompanyContext::class);
-
-        if (! $context->isEstablished()) {
-            return $companyId;
-        }
-
-        $contextCompanyId = $context->companyId();
-
-        if (! is_string($contextCompanyId)) {
-            throw new OrganizationLinkRequired('Current company context is required.');
-        }
-
-        $context->ensureCompanyId($companyId);
-
-        return $contextCompanyId;
     }
 }

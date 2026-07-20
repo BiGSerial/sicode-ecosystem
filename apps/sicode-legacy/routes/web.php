@@ -125,7 +125,7 @@ Route::prefix('/config/wall')->controller(WallController::class)->name('config.w
 
 Route::prefix('/services/{service}')->controller(ServicesController::class)->name('services.')->middleware('auth')->middleware('check.service.dispatch:services')->group(function () {
     Route::get('/', 'main')->name('main');
-    Route::get('/production/{prod}', 'production')->name('production');
+    Route::get('/production/{prod}', 'production')->middleware('current.company')->name('production');
     Route::get('/to_accompany', 'accompany')->name('accompany');
     Route::get('/my_historic', 'historic')->name('historic');
     Route::get('/waiting_d5_create', 'waiting_d5_create')->name('waiting_d5_create');
@@ -161,7 +161,7 @@ Route::prefix('/services/{service}')->controller(ServicesController::class)->nam
 
 Route::prefix('/construction/{service}')->controller(ConstructionController::class)->name('construction.')->middleware('auth')->middleware('check.service.dispatch:services')->group(function () {
     Route::get('/', 'main')->name('main');
-    Route::get('/production/{prod}')->name('production');
+    Route::get('/production/{prod}')->middleware('current.company')->name('production');
     Route::get('/to_accompany', 'accompany')->name('accompany');
     Route::get('/my_historic', 'historic')->name('historic');
     Route::get('/viab_returned', 'returned')->name('returned');

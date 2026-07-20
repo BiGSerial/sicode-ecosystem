@@ -6,6 +6,7 @@ use App\Models\Production;
 use App\Helpers\TextValidator;
 use App\Models\Notetimeline;
 use App\Models\ReturnRamal;
+use App\Services\Production\ProductionCompanyContext;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -37,6 +38,8 @@ class ReturnRamalWork extends Component
     public function toReturn(Production $production)
     {
         $this->production = $production;
+
+        app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
 
 
@@ -89,6 +92,7 @@ class ReturnRamalWork extends Component
         DB::beginTransaction();
 
         try {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
             $this->production->Note->RamalForm->update([
                 'rejected' => true,

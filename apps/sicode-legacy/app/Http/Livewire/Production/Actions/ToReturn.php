@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Production\Actions;
 
 use App\Models\Production;
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class ToReturn extends Component
@@ -20,6 +21,7 @@ class ToReturn extends Component
         $this->production = $production;
 
         if ($this->production) {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
             $this->dispatchBrowserEvent('alertar', [
                 'title'         => 'Retornar Atividade',
@@ -40,6 +42,8 @@ class ToReturn extends Component
     public function executeReturn()
     {
         try {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
             $this->production->update([
                 'att_by' => auth()->id(),
                 'att_at' => now(),

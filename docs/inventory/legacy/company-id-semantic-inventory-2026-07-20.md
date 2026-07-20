@@ -60,6 +60,61 @@ Comportamento atual:
 - empresa divergente enviada pelo browser e rejeitada quando ha contexto estabelecido;
 - UUID CORE nao e aceito como `productions.company_id`.
 
+## Segundo slice: Productions operacional
+
+O segundo slice de hardening foi limitado ao modulo operacional de Productions. A decisao foi nao migrar relatorios, exports, wall, dashboards, jobs batch, consultas historicas nem telas administrativas multempresa, porque esses fluxos nao possuem necessariamente uma unica empresa efetiva de sessao.
+
+Arquivos operacionais migrados para a abstracao local `App\Services\Production\ProductionCompanyContext`:
+
+| Arquivo / simbolo | Uso protegido | Politica aplicada |
+| --- | --- | --- |
+| `Production\Actions\NewProduction` | criar nova producao e transferir producao | `company_id` gravado vem do contexto atual quando estabelecido |
+| `Production\Actions\ToAssign` | atribuir e desatribuir usuario | selecao de empresa do browser nao pode trocar a empresa do contexto |
+| `Production\Actions\ToReturn` | retorno operacional | producao precisa pertencer a empresa atual |
+| `Production\Actions\ToRemove` | remocao operacional | producao precisa pertencer a empresa atual |
+| `Production\Actions\ToRemoveTransfer` | remocao de transferencia | producao precisa pertencer a empresa atual |
+| `Production\Actions\SetPriority` | prioridade | producao precisa pertencer a empresa atual |
+| `Production\Actions\Delete` | exclusao | producao precisa pertencer a empresa atual |
+| `Production\Actions\Reattribute` | reatribuicao | producao precisa pertencer a empresa atual |
+| `Production\Actions\Geralreattribute` | reatribuicao geral | producao precisa pertencer a empresa atual |
+| `Production\Return\ReturnWork` | retorno de informe | producao precisa pertencer a empresa atual |
+| `Production\Return\ReturnRamalWork` | retorno de ramal | producao precisa pertencer a empresa atual |
+| `Production\Return\RejectInformPartial` | rejeicao parcial | producao precisa pertencer a empresa atual |
+| `ServicesController::production` | abertura direta da producao por rota | producao precisa pertencer a empresa atual |
+
+Rotas com middleware `current.company` neste slice:
+
+- `services.production`;
+- `construction.production`.
+
+Rotas mantidas sem `current.company` por desenho:
+
+- `reports.productions`;
+- exports;
+- wall e dashboards;
+- telas administrativas multempresa;
+- login, logout, callback CORE e reconciliacao.
+
+`ProductionCompanyContext` nao interpreta payload CORE. Ele consome `CurrentCompanyContext`, valida a empresa local autorizada e delega a checagem de operacao local para `LegacyCompanyAccessResolver`.
+
+`LegacyCompanyAccessResolver` responde apenas se o usuario Legacy pode operar para uma empresa local por algum vinculo Legacy conhecido:
+
+- `users.company_id`;
+- pivot `company_user`;
+- `employees -> contracts -> company_id`.
+
+Esses vinculos nao inferem organizacao CORE. Eles somente validam acesso local depois que o contexto empresarial efetivo ja foi materializado.
+
+Politica operacional aplicada:
+
+- com `CurrentCompanyContext` estabelecido, `productions.company_id` deve continuar recebendo somente `companies.id` local;
+- UUID de organizacao CORE nunca deve ser persistido em `productions.company_id`;
+- parametro de empresa vindo do browser e diferente do contexto atual e rejeitado;
+- producao de outra empresa e rejeitada antes da mutacao;
+- sem contexto empresarial estabelecido, o comportamento Legacy existente e preservado para compatibilidade.
+
+Testes especificos deste slice estao em `tests/Feature/ProductionCompanyContextTest.php`.
+
 ## Auditoria da suite Legacy
 
 | Arquivo | Trait ou operacao | Tabelas afetadas | Risco | Correcao recomendada |

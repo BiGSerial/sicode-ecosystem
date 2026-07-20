@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Production\Actions;
 
 use App\Models\Production;
 use App\Services\D5\D5WorkflowService;
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class ToRemove extends Component
@@ -21,6 +22,7 @@ class ToRemove extends Component
         $this->production = $production;
 
         if ($this->production) {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
             $this->dispatchBrowserEvent('alertar', [
                 'title'         => 'Remover Atividade',
@@ -51,6 +53,8 @@ class ToRemove extends Component
         $five = $this->production->note?->FiveNote;
 
         try {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
             if ($five && $previousUserId) {
                 app(D5WorkflowService::class)->onProductionUnassigned(
                     $five,

@@ -2,10 +2,12 @@
 
 namespace App\Http\Livewire\Production\Actions;
 
+use App\CoreIntegration\CurrentCompanyContext;
 use App\Models\Company;
 use App\Models\Production;
 use App\Models\User;
 use App\Services\D5\D5WorkflowService;
+use App\Services\Production\ProductionCompanyContext;
 use Livewire\Component;
 
 class ToAssign extends Component
@@ -31,6 +33,8 @@ class ToAssign extends Component
         $this->users = null;
         $this->userSelected = null;
 
+        app(ProductionCompanyContext::class)->effectiveCompanyId((string) $value);
+
         $this->users = User::whereRelation('ToServices', function ($q) {
             $q->where('service_id', $this->production->service_id);
         })->where('company_id', $value)->orderBy('name')->get();
@@ -41,13 +45,20 @@ class ToAssign extends Component
         $this->production = $production;
 
         if ($this->production && $this->production->user_id) {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
             $this->toRemoveAssign();
         } elseif ($this->production && !$this->production->user_id) {
             if ($this->production) {
+                app(ProductionCompanyContext::class)->assertCanUse($this->production);
 
                 $this->companies = Company::whereRelation('contracts.services', function ($q) {
                     $q->where('uuid', $this->production->service_id);
-                })->orderBy('name')->get();
+                })
+                    ->when(app(CurrentCompanyContext::class)->isEstablished(), function ($query) {
+                        $query->whereKey(app(CurrentCompanyContext::class)->companyId());
+                    })
+                    ->orderBy('name')
+                    ->get();
 
                 // $this->users = User::whereRelation('ToServices', function ($q) {
                 //     $q->where('service_id', $this->production->service_id);
@@ -84,6 +95,8 @@ class ToAssign extends Component
         $previousUserId = $this->production->user_id;
 
         try {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+
             $this->production->update([
                 'user_id' => null,
                 'status'  => 1,
@@ -159,9 +172,12 @@ class ToAssign extends Component
         $previousUserId = $this->production->user_id;
 
         try {
+            app(ProductionCompanyContext::class)->assertCanUse($this->production);
+            $companyId = app(ProductionCompanyContext::class)->effectiveCompanyId((string) $this->companySelected);
+
             $this->production->update([
                 'user_id' => $this->userSelected,
-                'company_id' => $this->companySelected,
+                'company_id' => $companyId,
                 'att_by' => auth()->id(),
                 'att_at' => now(),
                 'completed_at' => null,
