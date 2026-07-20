@@ -92,6 +92,27 @@ Comandos Legacy disponiveis apos a importacao do codigo real:
 make legacy-shell
 make legacy-migrate
 make legacy-test
+make legacy-test-es
+make legacy-test-sp
+make legacy-test-matrix
+```
+
+O runtime Legacy local inicia como unidade ES por padrao:
+
+```bash
+SICODE_LEGACY_UNIT=es SICODE_LEGACY_CORE_CONTEXT=ES docker compose up -d sicode-legacy
+```
+
+Para validar o mesmo codigo em configuracao SP sem provisionar uma segunda instancia:
+
+```bash
+docker compose exec -T -e APP_ENV=testing -e SICODE_UNIT=sp -e CORE_LAUNCH_CONTEXT=SP sicode-legacy php artisan test tests/Unit/SicodeMultiUnitRuntimeTest.php tests/Feature/CoreLaunchUnitContextTest.php --env=testing
+```
+
+O gate focado da matriz multiunidade pode ser executado por:
+
+```bash
+make legacy-test-matrix
 ```
 
 Testes de integracao CORE -> Legacy sobre a base restaurada `sicode_legacy` exigem autorizacao explicita para evitar execucao acidental contra banco incorreto:

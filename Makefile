@@ -1,7 +1,7 @@
 COMPOSE ?= docker compose
 CADDY_HTTP_PORT ?= 8090
 
-.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-migrate
+.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-migrate
 
 up:
 	$(COMPOSE) up -d
@@ -57,6 +57,16 @@ legacy-shell:
 
 legacy-test:
 	$(COMPOSE) exec -e APP_ENV=testing sicode-legacy php artisan test --env=testing
+
+legacy-test-es:
+	$(COMPOSE) exec -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true -e SICODE_UNIT=es -e CORE_LAUNCH_CONTEXT=ES sicode-legacy php artisan test tests/Unit/SicodeMultiUnitRuntimeTest.php tests/Feature/CoreLaunchUnitContextTest.php tests/Unit/LegacyDumpDatabaseGuardTest.php tests/Feature/CoreLaunchConsumerTest.php tests/Feature/ProductionCompanyContextTest.php tests/Feature/WorkReportCompanyContextTest.php --env=testing
+
+legacy-test-sp:
+	$(COMPOSE) exec -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true -e SICODE_UNIT=sp -e CORE_LAUNCH_CONTEXT=SP sicode-legacy php artisan test tests/Unit/SicodeMultiUnitRuntimeTest.php tests/Feature/CoreLaunchUnitContextTest.php tests/Unit/LegacyDumpDatabaseGuardTest.php tests/Feature/CoreLaunchConsumerTest.php tests/Feature/ProductionCompanyContextTest.php tests/Feature/WorkReportCompanyContextTest.php --env=testing
+
+legacy-test-matrix:
+	$(MAKE) legacy-test-es
+	$(MAKE) legacy-test-sp
 
 legacy-migrate:
 	$(COMPOSE) exec sicode-legacy php artisan migrate

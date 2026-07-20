@@ -81,9 +81,16 @@ services:
       DB_LOG_DATABASE: sicode_legacy_logs
       DB_LOG_USERNAME: sicode_legacy
       DB_LOG_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
+      SICODE_UNIT: ${SICODE_LEGACY_UNIT:-es}
+      SICODE_IDENTITY_MODE: ${SICODE_LEGACY_IDENTITY_MODE:-reconciliation}
+      SICODE_INSTANCE_CODE: ${SICODE_LEGACY_INSTANCE_CODE:-sicode-legacy-es-local}
+      SICODE_INSTANCE_NAME: ${SICODE_LEGACY_INSTANCE_NAME:-SICODE Legacy ES Local}
+      SICODE_STORAGE_PREFIX: ${SICODE_LEGACY_STORAGE_PREFIX:-legacy/es}
       CORE_LAUNCH_EXCHANGE_URL: http://sicode-core:8000/api/core/launch/exchange
       CORE_LAUNCH_CLIENT_IDENTIFIER: ${SICODE_LEGACY_CORE_CLIENT_IDENTIFIER:-sicode-legacy-local}
       CORE_LAUNCH_CLIENT_SECRET: ${SICODE_LEGACY_CORE_CLIENT_SECRET:-local_legacy_core_secret}
+      CORE_LAUNCH_REDIRECT_URI: ${SICODE_LEGACY_CORE_REDIRECT_URI:-http://localhost:8083/core/launch/callback}
+      CORE_LAUNCH_CONTEXT: ${SICODE_LEGACY_CORE_CONTEXT:-ES}
     depends_on:
       sicode-legacy-mariadb:
         condition: service_healthy

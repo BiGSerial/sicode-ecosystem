@@ -218,6 +218,14 @@ O inventario semantico inicial de `company_id` esta registrado em `docs/inventor
 
 O inventario especifico do hardening de Productions esta registrado em `docs/inventory/legacy/productions-company-context-hardening.md`.
 
+## Runtime multiunidade Legacy
+
+A fundacao multiunidade ES/SP esta documentada em `docs/architecture/legacy-multi-unit-runtime.md` e formalizada pela ADR `docs/decisions/ADR-003-sicode-legacy-multi-unit-runtime.md`.
+
+Cada instancia Legacy deve declarar `SICODE_UNIT`, `SICODE_IDENTITY_MODE`, cliente CORE, contexto CORE esperado e parametros de storage em configuracao local. O mesmo codigo roda para ES e SP, mas banco, storage, cliente CORE e autorizacoes do CORE sao independentes por instancia.
+
+O contexto recebido no exchange CORE deve bater com a unidade configurada antes de qualquer resolucao de usuario, organizacao ou sessao. Divergencias falham como erro controlado de integracao e mensagem publica neutra.
+
 O inventario especifico do hardening de Informe de Obra esta registrado em `docs/inventory/legacy/work-report-company-context-hardening.md`.
 
 ## Aposentadoria do Legacy

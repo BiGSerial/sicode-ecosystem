@@ -7,14 +7,18 @@ use InvalidArgumentException;
 
 final class CoreLaunchExchangeClient
 {
+    public function __construct(private readonly CoreLaunchContextValidator $contextValidator)
+    {
+    }
+
     public function exchange(string $code, string $state): CoreLaunchIdentity
     {
         $response = Http::asJson()
             ->acceptJson()
             ->timeout(5)
             ->post((string) config('core_integration.launch_exchange_url'), [
-                'client_identifier' => (string) config('core_integration.client_identifier'),
-                'client_secret' => (string) config('core_integration.client_secret'),
+                'client_identifier' => (string) (config('sicode.core.client.identifier') ?: config('core_integration.client_identifier')),
+                'client_secret' => (string) (config('sicode.core.client.secret') ?: config('core_integration.client_secret')),
                 'code' => $code,
                 'state' => $state,
             ]);
@@ -37,9 +41,7 @@ final class CoreLaunchExchangeClient
             throw new CoreLaunchException('CORE launch exchange rejected.');
         }
 
-        if ($identity->context !== (string) config('core_integration.context')) {
-            throw new CoreLaunchException('CORE launch exchange rejected.');
-        }
+        $this->contextValidator->assertMatchesConfiguredUnit($identity);
 
         return $identity;
     }

@@ -31,14 +31,23 @@ class CoreLaunchConsumerTest extends TestCase
     {
         parent::setUp();
 
+        $context = $this->runtimeContext();
+
         config([
             'core_integration.launch_exchange_url' => 'https://core.example.test/api/core/launch/exchange',
-            'core_integration.client_identifier' => 'legacy-es',
+            'core_integration.client_identifier' => 'legacy-'.strtolower($context),
             'core_integration.client_secret' => 'secret',
             'core_integration.issuer' => 'sicode-core',
             'core_integration.application' => 'sicode-legacy',
-            'core_integration.context' => 'ES',
+            'core_integration.context' => $context,
+            'sicode.unit' => strtolower($context),
+            'sicode.core.client.identifier' => 'legacy-'.strtolower($context),
+            'sicode.core.client.secret' => 'secret',
+            'sicode.core.expected_context' => $context,
         ]);
+
+        $this->app->forgetInstance(\App\Support\CurrentUnit::class);
+        $this->app->forgetInstance(\App\Support\UnitCapabilities::class);
     }
 
     public function test_core_organization_link_resolves_local_company_id(): void
@@ -46,7 +55,7 @@ class CoreLaunchConsumerTest extends TestCase
         $company = $this->createCompany();
         $coreOrganizationId = (string) Str::uuid();
 
-        $this->createOrganizationLink($coreOrganizationId, 'ES', $company);
+        $this->createOrganizationLink($coreOrganizationId, $this->runtimeContext(), $company);
 
         $link = app(CoreOrganizationLinkResolver::class)->resolve($this->identity(coreOrganizationId: $coreOrganizationId));
 
@@ -119,7 +128,7 @@ class CoreLaunchConsumerTest extends TestCase
         $user = $this->createUser($this->createCompany('User Company'));
         $authorizedCompany = $this->createCompany('Authorized Company');
         $this->createIdentityLink($user);
-        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', 'ES', $authorizedCompany);
+        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $authorizedCompany);
 
         Http::fake([
             'https://core.example.test/*' => Http::response($this->payload(coreOrganizationId: '11111111-1111-4111-8111-111111111111'), 200),
@@ -135,7 +144,7 @@ class CoreLaunchConsumerTest extends TestCase
         $company = $this->createCompany();
         $user = $this->createUser($company);
         $this->createIdentityLink($user);
-        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', 'ES', $company);
+        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $company);
 
         Http::fake([
             'https://core.example.test/*' => Http::response($this->payload(coreOrganizationId: '11111111-1111-4111-8111-111111111111'), 200),
@@ -149,14 +158,14 @@ class CoreLaunchConsumerTest extends TestCase
         $this->assertTrue(app(CurrentCompanyContext::class)->isEstablished());
         $this->assertSame('core', app(CurrentCompanyContext::class)->source());
         $this->assertSame('11111111-1111-4111-8111-111111111111', app(CurrentCompanyContext::class)->coreOrganizationId());
-        $this->assertSame('ES', app(CurrentCompanyContext::class)->applicationContext());
+        $this->assertSame($this->runtimeContext(), app(CurrentCompanyContext::class)->applicationContext());
     }
 
     public function test_livewire_components_can_read_company_through_local_abstraction(): void
     {
         $company = $this->createCompany();
-        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', 'ES', $company);
-        app(CurrentCompanyContext::class)->set(CoreOrganizationLink::firstOrFail(), 'ES');
+        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $company);
+        app(CurrentCompanyContext::class)->set(CoreOrganizationLink::firstOrFail(), $this->runtimeContext());
 
         $component = new class {
             use UsesCurrentCompanyContext;
@@ -243,8 +252,8 @@ class CoreLaunchConsumerTest extends TestCase
         $sourceProduction = $this->createProduction($company->id);
 
         $this->actingAs($user);
-        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', 'ES', $company);
-        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), 'ES');
+        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $company);
+        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), $this->runtimeContext());
 
         $component = new NewProduction();
         $component->production = $sourceProduction;
@@ -270,8 +279,8 @@ class CoreLaunchConsumerTest extends TestCase
         $coreOrganizationId = '11111111-1111-4111-8111-111111111111';
 
         $this->actingAs($user);
-        $this->createOrganizationLink($coreOrganizationId, 'ES', $company);
-        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), 'ES');
+        $this->createOrganizationLink($coreOrganizationId, $this->runtimeContext(), $company);
+        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), $this->runtimeContext());
 
         $component = new NewProduction();
         $component->production = $sourceProduction;
@@ -292,8 +301,8 @@ class CoreLaunchConsumerTest extends TestCase
         $sourceProduction = $this->createProduction($contextCompany->id);
 
         $this->actingAs($user);
-        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', 'ES', $contextCompany);
-        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), 'ES');
+        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $contextCompany);
+        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), $this->runtimeContext());
 
         $component = new NewProduction();
         $component->production = $sourceProduction;
@@ -359,13 +368,13 @@ class CoreLaunchConsumerTest extends TestCase
         ]);
     }
 
-    private function createIdentityLink(User $user, string $context = 'ES'): CoreIdentityLink
+    private function createIdentityLink(User $user, ?string $context = null): CoreIdentityLink
     {
         return CoreIdentityLink::create([
             'core_issuer' => 'sicode-core',
             'core_subject' => '22222222-2222-4222-8222-222222222222',
             'legacy_user_id' => $user->id,
-            'application_context' => $context,
+            'application_context' => $context ?? $this->runtimeContext(),
             'status' => CoreIdentityLink::STATUS_ACTIVE,
             'linked_at' => now(),
         ]);
@@ -415,7 +424,7 @@ class CoreLaunchConsumerTest extends TestCase
             coreSubject: '22222222-2222-4222-8222-222222222222',
             coreOrganizationId: $coreOrganizationId ?? '11111111-1111-4111-8111-111111111111',
             application: 'sicode-legacy',
-            context: 'ES',
+            context: $this->runtimeContext(),
             launchId: (string) Str::uuid(),
             issuedAt: now()->toJSON(),
             expiresAt: now()->addMinutes(5)->toJSON(),
@@ -441,5 +450,10 @@ class CoreLaunchConsumerTest extends TestCase
             'expires_at' => $identity->expiresAt,
             'state' => $identity->state,
         ];
+    }
+
+    private function runtimeContext(): string
+    {
+        return strtoupper((string) env('SICODE_UNIT', 'es'));
     }
 }
