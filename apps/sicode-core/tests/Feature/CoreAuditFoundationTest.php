@@ -81,13 +81,15 @@ class CoreAuditFoundationTest extends TestCase
 
     public function test_schema_d_system_allows_null_actor_id(): void
     {
+        $initialCount = CoreAuditEvent::count();
+
         DB::table('core_audit_events')->insert([
             ...$this->validAuditPayload(),
             'actor_type' => CoreAuditActorType::System->value,
             'actor_id' => null,
         ]);
 
-        $this->assertSame(1, CoreAuditEvent::count());
+        $this->assertSame($initialCount + 1, CoreAuditEvent::count());
     }
 
     public function test_schema_e_identifiable_actor_requires_actor_id(): void
@@ -322,6 +324,8 @@ class CoreAuditFoundationTest extends TestCase
 
     public function test_enum_catalog_values_are_accepted_by_schema(): void
     {
+        $initialCount = CoreAuditEvent::count();
+
         foreach (CoreAuditAction::cases() as $action) {
             $this->recordEvent(action: $action);
         }
@@ -335,7 +339,7 @@ class CoreAuditFoundationTest extends TestCase
         }
 
         $this->assertSame(
-            count(CoreAuditAction::cases()) + count(CoreAuditActorType::cases()) + count(CoreAuditSubjectType::cases()),
+            $initialCount + count(CoreAuditAction::cases()) + count(CoreAuditActorType::cases()) + count(CoreAuditSubjectType::cases()),
             CoreAuditEvent::count(),
         );
     }

@@ -16,6 +16,7 @@ use App\Models\OrganizationMembership;
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CoreModelsTest extends TestCase
@@ -174,7 +175,7 @@ class CoreModelsTest extends TestCase
     {
         $user = $this->createUser();
         $organization = $this->createOrganization();
-        $application = $this->createCoreApplication('sicode-legacy');
+        $application = $this->createCoreApplication('app-rel-'.strtolower(Str::random(6)));
         $context = $this->createContext($application, 'es');
         $contract = $this->createContract($organization);
         $client = $this->createClient($application, $context);
@@ -191,7 +192,7 @@ class CoreModelsTest extends TestCase
 
     public function test_client_and_context_relationships_follow_schema(): void
     {
-        $application = $this->createCoreApplication('sicode-legacy');
+        $application = $this->createCoreApplication('app-client-'.strtolower(Str::random(6)));
         $context = $this->createContext($application, 'sp');
         $client = $this->createClient($application, $context);
 
@@ -206,7 +207,7 @@ class CoreModelsTest extends TestCase
     public function test_application_access_relates_user_application_and_context(): void
     {
         $user = $this->createUser();
-        $application = $this->createCoreApplication('sicode-legacy');
+        $application = $this->createCoreApplication('app-access-'.strtolower(Str::random(6)));
         $context = $this->createContext($application, 'es');
 
         $access = $this->createAccess($user, $application, $context);
@@ -220,7 +221,7 @@ class CoreModelsTest extends TestCase
     {
         $organization = $this->createOrganization();
         $contract = $this->createContract($organization);
-        $application = $this->createCoreApplication('sicode-legacy');
+        $application = $this->createCoreApplication('app-grant-'.strtolower(Str::random(6)));
         $context = $this->createContext($application, 'sp');
 
         $grant = $this->createGrant($contract, $application, $context);
@@ -260,22 +261,26 @@ class CoreModelsTest extends TestCase
 
     private function createCoreApplication(string $code): CoreApplication
     {
-        return CoreApplication::create([
-            'code' => $code,
-            'name' => $code,
-            'status' => 'active',
-            'requires_organization' => false,
-            'requires_contract' => false,
-        ]);
+        return CoreApplication::firstOrCreate(
+            ['code' => $code],
+            [
+                'name' => $code,
+                'status' => 'active',
+                'requires_organization' => false,
+                'requires_contract' => false,
+            ],
+        );
     }
 
     private function createContext(CoreApplication $application, string $code): ApplicationContext
     {
-        return $application->contexts()->create([
-            'code' => $code,
-            'name' => $code,
-            'status' => 'active',
-        ]);
+        return $application->contexts()->firstOrCreate(
+            ['code' => $code],
+            [
+                'name' => $code,
+                'status' => 'active',
+            ],
+        );
     }
 
     private function createClient(CoreApplication $application, ?ApplicationContext $context = null): ApplicationClient

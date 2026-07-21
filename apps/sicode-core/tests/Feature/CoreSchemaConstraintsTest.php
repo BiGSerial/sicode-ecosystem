@@ -102,11 +102,12 @@ class CoreSchemaConstraintsTest extends TestCase
 
     public function test_application_code_is_unique(): void
     {
-        $this->createCoreApplication('sicodesk');
+        $code = 'unique-app-'.strtolower(Str::random(6));
+        $this->insertApplicationRecord($code);
 
         $this->expectException(QueryException::class);
 
-        $this->createCoreApplication('sicodesk');
+        $this->insertApplicationRecord($code);
     }
 
     public function test_application_code_format_is_constrained(): void
@@ -537,6 +538,16 @@ class CoreSchemaConstraintsTest extends TestCase
     }
 
     private function createCoreApplication(string $code): string
+    {
+        $existing = DB::table('applications')->where('code', $code)->value('id');
+        if ($existing !== null) {
+            return (string) $existing;
+        }
+
+        return $this->insertApplicationRecord($code);
+    }
+
+    private function insertApplicationRecord(string $code): string
     {
         $id = (string) Str::uuid();
 
