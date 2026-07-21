@@ -49,6 +49,7 @@ class Kernel extends HttpKernel
         // Outros middlewares
         'check.service.dispatch' => \App\Http\Middleware\CheckServiceOrDispatchPermission::class,
         'current.company' => \App\Http\Middleware\EnsureCurrentCompanyContext::class,
+        'core.provisioning.no_browser' => \App\Http\Middleware\RejectBrowserProvisioningRequests::class,
     ];
 
     /**
@@ -72,6 +73,7 @@ class Kernel extends HttpKernel
         'verified'         => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'admin'            => \App\Http\Middleware\AdminMiddleware::class,
         'current.company'  => \App\Http\Middleware\EnsureCurrentCompanyContext::class,
+        'core.provisioning.no_browser' => \App\Http\Middleware\RejectBrowserProvisioningRequests::class,
     ];
 
 

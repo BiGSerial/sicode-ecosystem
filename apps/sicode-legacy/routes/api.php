@@ -70,3 +70,10 @@ Route::prefix('v1')->group(function () {
 
 
 });
+
+Route::prefix('core/provisioning')
+    ->middleware(['throttle:core-provisioning', 'core.provisioning.no_browser'])
+    ->group(function () {
+        Route::post('/organizations', \App\Http\Controllers\CoreProvisioning\ProvisionOrganizationController::class);
+        Route::post('/users', \App\Http\Controllers\CoreProvisioning\ProvisionUserController::class);
+    });

@@ -29,6 +29,13 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        RateLimiter::for('core-provisioning', function (Request $request) {
+            $clientIdentifier = (string) $request->input('client_identifier', 'anonymous');
+            $maxPerMinute = max(1, (int) config('core_provisioning.rate_limit_per_minute', 30));
+
+            return Limit::perMinute($maxPerMinute)->by($clientIdentifier.'|'.$request->ip());
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

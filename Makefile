@@ -59,10 +59,10 @@ legacy-test:
 	$(COMPOSE) exec -e APP_ENV=testing sicode-legacy php artisan test --env=testing
 
 legacy-test-es:
-	$(COMPOSE) exec -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true -e SICODE_UNIT=es -e CORE_LAUNCH_CONTEXT=ES sicode-legacy php artisan test tests/Unit/SicodeMultiUnitRuntimeTest.php tests/Feature/CoreLaunchUnitContextTest.php tests/Unit/LegacyDumpDatabaseGuardTest.php tests/Feature/CoreLaunchConsumerTest.php tests/Feature/ProductionCompanyContextTest.php tests/Feature/WorkReportCompanyContextTest.php --env=testing
+	$(COMPOSE) exec -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true -e SICODE_UNIT=es -e CORE_LAUNCH_CONTEXT=ES sicode-legacy php artisan test tests/Unit/SicodeMultiUnitRuntimeTest.php tests/Feature/CoreLaunchUnitContextTest.php tests/Unit/LegacyDumpDatabaseGuardTest.php tests/Feature/CoreLaunchConsumerTest.php tests/Feature/CoreProvisioningEndpointTest.php tests/Feature/ProductionCompanyContextTest.php tests/Feature/WorkReportCompanyContextTest.php --env=testing
 
 legacy-test-sp:
-	$(COMPOSE) exec -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true -e SICODE_UNIT=sp -e CORE_LAUNCH_CONTEXT=SP sicode-legacy php artisan test tests/Unit/SicodeMultiUnitRuntimeTest.php tests/Feature/CoreLaunchUnitContextTest.php tests/Unit/LegacyDumpDatabaseGuardTest.php tests/Feature/CoreLaunchConsumerTest.php tests/Feature/ProductionCompanyContextTest.php tests/Feature/WorkReportCompanyContextTest.php --env=testing
+	$(COMPOSE) exec -e APP_ENV=testing -e LEGACY_TEST_DATABASE_ALLOWED=true -e SICODE_UNIT=sp -e CORE_LAUNCH_CONTEXT=SP sicode-legacy php artisan test tests/Unit/SicodeMultiUnitRuntimeTest.php tests/Feature/CoreLaunchUnitContextTest.php tests/Unit/LegacyDumpDatabaseGuardTest.php tests/Feature/CoreLaunchConsumerTest.php tests/Feature/CoreProvisioningEndpointTest.php tests/Feature/ProductionCompanyContextTest.php tests/Feature/WorkReportCompanyContextTest.php --env=testing
 
 legacy-test-matrix:
 	$(MAKE) legacy-test-es
