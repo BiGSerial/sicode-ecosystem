@@ -10,4 +10,5 @@ enum ContractStatus: string
     case Active = 'active';
     case Suspended = 'suspended';
     case Ended = 'ended';
+    case Expired = 'expired';
 }

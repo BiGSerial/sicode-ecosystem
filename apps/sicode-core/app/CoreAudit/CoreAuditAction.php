@@ -42,6 +42,7 @@ enum CoreAuditAction: string
     case ContractSuspended = 'CONTRACT_SUSPENDED';
     case ContractReactivated = 'CONTRACT_REACTIVATED';
     case ContractEnded = 'CONTRACT_ENDED';
+    case ContractExpired = 'CONTRACT_EXPIRED';
 
     case ApplicationCreated = 'APPLICATION_CREATED';
     case ApplicationDeactivated = 'APPLICATION_DEACTIVATED';
@@ -57,6 +58,7 @@ enum CoreAuditAction: string
     case ApplicationAccessRevoked = 'APPLICATION_ACCESS_REVOKED';
     case ApplicationAccessSuspended = 'APPLICATION_ACCESS_SUSPENDED';
     case ApplicationAccessReactivated = 'APPLICATION_ACCESS_REACTIVATED';
+    case ApplicationAccessExpired = 'APPLICATION_ACCESS_EXPIRED';
 
     case ContractApplicationGrantGranted = 'CONTRACT_APPLICATION_GRANT_GRANTED';
     case ContractApplicationGrantRevoked = 'CONTRACT_APPLICATION_GRANT_REVOKED';

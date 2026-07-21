@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property CarbonInterface|null $starts_at
+ * @property CarbonInterface|null $ends_at
+ */
 class ApplicationAccess extends CoreModel
 {
     protected $fillable = [

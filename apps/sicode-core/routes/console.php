@@ -12,10 +12,16 @@ use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Schedule::command('core:process-expired-accesses')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();
 
 Artisan::command('core:legacy-sp:provision-organization {organization_id} {--dry-run}', function (): int {
     /** @var string $organizationId */

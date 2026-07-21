@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property CarbonInterface|null $starts_at
+ * @property CarbonInterface|null $ends_at
+ */
 class Contract extends CoreModel
 {
     protected $fillable = [
