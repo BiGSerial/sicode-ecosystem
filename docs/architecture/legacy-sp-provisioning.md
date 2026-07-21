@@ -41,6 +41,12 @@ Versao do contrato:
 - campo obrigatorio `contract_version`;
 - valor atual: `2026-07-21`.
 
+Consumidor CORE implementado:
+
+- cliente tecnico em `apps/sicode-core/app/LegacyProvisioning/LegacySpProvisioningClient.php`;
+- configuracao em `apps/sicode-core/config/legacy_provisioning.php`;
+- documento de consumo em `docs/architecture/core-to-legacy-sp-provisioning.md`.
+
 ## Autenticacao de client
 
 Autenticacao tecnica separada do launch e separada de usuario:

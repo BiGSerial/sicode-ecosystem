@@ -69,6 +69,16 @@ enum CoreAuditAction: string
     case ApplicationLaunchExchangeRejected = 'APPLICATION_LAUNCH_EXCHANGE_REJECTED';
     case ApplicationLaunchReplayRejected = 'APPLICATION_LAUNCH_REPLAY_REJECTED';
 
+    case LegacyProvisioningRequested = 'LEGACY_PROVISIONING_REQUESTED';
+    case LegacyOrganizationProvisioned = 'LEGACY_ORGANIZATION_PROVISIONED';
+    case LegacyOrganizationAlreadyProvisioned = 'LEGACY_ORGANIZATION_ALREADY_PROVISIONED';
+    case LegacyUserProvisioned = 'LEGACY_USER_PROVISIONED';
+    case LegacyUserAlreadyProvisioned = 'LEGACY_USER_ALREADY_PROVISIONED';
+    case LegacyProvisioningConflict = 'LEGACY_PROVISIONING_CONFLICT';
+    case LegacyProvisioningRejected = 'LEGACY_PROVISIONING_REJECTED';
+    case LegacyProvisioningUnavailable = 'LEGACY_PROVISIONING_UNAVAILABLE';
+    case LegacyProvisioningPartiallyCompleted = 'LEGACY_PROVISIONING_PARTIALLY_COMPLETED';
+
     /**
      * @return list<string>
      */

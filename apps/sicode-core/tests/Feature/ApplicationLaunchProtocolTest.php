@@ -391,8 +391,7 @@ class ApplicationLaunchProtocolTest extends TestCase
         string $status = 'active',
         bool $requiresOrganization = false,
         bool $requiresContract = false,
-    ): CoreApplication
-    {
+    ): CoreApplication {
         $this->sequence++;
 
         return CoreApplication::create([
@@ -479,8 +478,7 @@ class ApplicationLaunchProtocolTest extends TestCase
         User $user,
         CoreApplication $application,
         ?ApplicationContext $context = null,
-    ): ApplicationAccess
-    {
+    ): ApplicationAccess {
         return app(GrantApplicationAccess::class)(
             user: $user,
             application: $application,
