@@ -48,11 +48,12 @@ class LoginController extends Controller
     protected function authenticated(Request $request, $user)
     {
         $context = (string) config('sicode.core.expected_context');
-        $hasSuspendedLink = \App\Models\CoreIdentityLink::query()
-            ->where('legacy_user_id', $user->id)
-            ->where('application_context', $context)
-            ->where('status', \App\Models\CoreIdentityLink::STATUS_SUSPENDED)
-            ->exists();
+        $hasSuspendedLink = \Illuminate\Support\Facades\Schema::hasTable('core_identity_links')
+            && \App\Models\CoreIdentityLink::query()
+                ->where('legacy_user_id', $user->id)
+                ->where('application_context', $context)
+                ->where('status', \App\Models\CoreIdentityLink::STATUS_SUSPENDED)
+                ->exists();
 
         if ($hasSuspendedLink) {
             $this->guard()->logout();
