@@ -2,19 +2,11 @@
 
 namespace App\Http\Livewire\Partner\Forms;
 
-use App\Custom\Partial\Ads;
-use App\Custom\Partial\Rules;
-use App\Models\File;
-use App\Models\Note;
-use App\Models\Order;
-use App\Models\Partial;
+use App\Custom\Partial\{Ads};
+use App\Models\{File, Note};
 use App\Traits\WithFileUploadProcessing;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Livewire\Component;
-use Livewire\WithFileUploads;
-use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\{DB, Storage};
+use Livewire\{Component, WithFileUploads};
 
 class ReceiveAdsfomrm extends Component
 {
@@ -22,17 +14,29 @@ class ReceiveAdsfomrm extends Component
     use WithFileUploadProcessing;
 
     public $search;
+
     public $note;
+
     public $notes;
+
     public $partial;
+
     public $file;
+
     public $orders = [];
+
     public $process = false;
+
     public $responsible;
+
     public $observation;
+
     public $amount;
+
     public $hasFile = false;
+
     public bool $hasAsbuiltFile = false;
+
     public $lateDeliveryAfterSubmit = null;
 
     // Serialized state for $theAds
@@ -45,7 +49,7 @@ class ReceiveAdsfomrm extends Component
         'confirm_save' => 'save',
         'hasFile',
         'hasAsbuiltFile',
-        'savedFiles'
+        'savedFiles',
     ];
 
     protected $rules = [
@@ -54,19 +58,19 @@ class ReceiveAdsfomrm extends Component
     ];
 
     protected $messages = [
-        'file.file' => 'O arquivo deve ser um arquivo válido.',
+        'file.file'  => 'O arquivo deve ser um arquivo válido.',
         'file.mimes' => 'O arquivo deve ser um arquivo do tipo: xlsx, xls.',
-        'file.max' => 'O arquivo não pode ser maior que 30MB.',
+        'file.max'   => 'O arquivo não pode ser maior que 30MB.',
     ];
 
     public function mount()
     {
-        $this->search = '';
-        $this->note = null;
-        $this->notes = null;
-        $this->file = null;
+        $this->search     = '';
+        $this->note       = null;
+        $this->notes      = null;
+        $this->file       = null;
         $this->theAdsPath = null;
-        $this->theAds = null;
+        $this->theAds     = null;
     }
 
     public function hydrate()
@@ -83,13 +87,14 @@ class ReceiveAdsfomrm extends Component
         $this->validateOnly('file');
 
         $this->process = false;
+
         if ($this->file) {
             // Store the path for hydration
             $this->theAdsPath = $this->file->getRealPath();
-            $this->theAds = new Ads($this->theAdsPath);
+            $this->theAds     = new Ads($this->theAdsPath);
         } else {
             $this->theAdsPath = null;
-            $this->theAds = null;
+            $this->theAds     = null;
         }
 
     }
@@ -107,15 +112,16 @@ class ReceiveAdsfomrm extends Component
     public function savedFiles()
     {
         $html = null;
+
         if ($this->lateDeliveryAfterSubmit) {
             $html = "<div class='alert alert-warning text-start mb-0'><strong>Entrega em atraso:</strong><br>{$this->lateDeliveryAfterSubmit}</div>";
         }
 
         $this->dispatchBrowserEvent('swal', [
-            'position' => 'center',
-            'icon'     => 'success',
-            'title'    => 'ENVIADO COM SUCESSO',
-            'html'     => $html,
+            'position'          => 'center',
+            'icon'              => 'success',
+            'title'             => 'ENVIADO COM SUCESSO',
+            'html'              => $html,
             'confirmButtonText' => 'OK',
         ]);
 
@@ -124,16 +130,22 @@ class ReceiveAdsfomrm extends Component
 
     public function search()
     {
-        $this->note = null;
-        $this->notes = null;
-        $this->file = null;
+        $this->note       = null;
+        $this->notes      = null;
+        $this->file       = null;
         $this->theAdsPath = null;
-        $this->theAds = null;
+        $this->theAds     = null;
 
-        $this->notes = Note::where(function ($q) {
-            $q->where('note', trim($this->search))
-                ->orWhereRelation('Orders', 'ordem', trim($this->search));
+        $adsContext = app(\App\CoreIntegration\AdsCompanyContext::class);
+        $companyId  = $adsContext->currentCompanyId();
+
+        $this->notes = Note::whereHas('WorkFormAny', function ($q) use ($companyId) {
+            $q->where('company_id', $companyId);
         })
+            ->where(function ($q) {
+                $q->where('note', trim($this->search))
+                    ->orWhereRelation('Orders', 'ordem', trim($this->search));
+            })
             ->with(
                 'WorkForm.Orders',
                 'WorkForm.LatestReturnwork.User',
@@ -146,7 +158,16 @@ class ReceiveAdsfomrm extends Component
 
     public function getNote($id)
     {
-        $this->note = Note::find($id);
+        $adsContext = app(\App\CoreIntegration\AdsCompanyContext::class);
+        $companyId  = $adsContext->currentCompanyId();
+
+        $note = Note::whereHas('WorkFormAny', function ($q) use ($companyId) {
+            $q->where('company_id', $companyId);
+        })->find($id);
+
+        $adsContext->validateNoteAccess($note);
+
+        $this->note = $note;
     }
 
     public function removeTempFile($path)
@@ -154,9 +175,9 @@ class ReceiveAdsfomrm extends Component
         if (Storage::exists($path)) {
             Storage::delete($path);
         }
-        $this->file = null;
+        $this->file       = null;
         $this->theAdsPath = null;
-        $this->theAds = null;
+        $this->theAds     = null;
     }
 
     public function processFile()
@@ -165,16 +186,15 @@ class ReceiveAdsfomrm extends Component
 
         if (is_null($this->theAds) && $this->theAdsPath) {
 
-
             $this->theAds = new Ads($this->theAdsPath);
         }
 
         if (!$this->theAds->exists()) {
             $this->dispatchBrowserEvent('swal', [
                 'position' => 'center',
-                'icon' => 'error',
-                'title' => 'ADS INVÁLIDA',
-                'html' => "O ARQUIVO NÃO CONRRESPONDE AO MODELO DIGITAL ENTREGUE, NEM POSSUI AS INFORMAÇÕES NESCESSÁRIAS.",
+                'icon'     => 'error',
+                'title'    => 'ADS INVÁLIDA',
+                'html'     => "O ARQUIVO NÃO CONRRESPONDE AO MODELO DIGITAL ENTREGUE, NEM POSSUI AS INFORMAÇÕES NESCESSÁRIAS.",
             ]);
 
             $this->removeTempFile($this->theAdsPath);
@@ -182,14 +202,12 @@ class ReceiveAdsfomrm extends Component
             return;
         }
 
-
-
         if ($this->theAds->note != $this->note->note) {
             $this->dispatchBrowserEvent('swal', [
                 'position' => 'center',
-                'icon' => 'error',
-                'title' => 'OBRA NÂO CORRESPONDENTE',
-                'html' => "A ADS REFERE-SE A OBRA <STRONG>{$this->theAds->note}</STRONG>. ENVIE A ADS CORRESPONDENTE A OBRA <STRONG>{$this->note->note}</STRONG>. .",
+                'icon'     => 'error',
+                'title'    => 'OBRA NÂO CORRESPONDENTE',
+                'html'     => "A ADS REFERE-SE A OBRA <STRONG>{$this->theAds->note}</STRONG>. ENVIE A ADS CORRESPONDENTE A OBRA <STRONG>{$this->note->note}</STRONG>. .",
             ]);
 
             $this->removeTempFile($this->theAdsPath);
@@ -200,9 +218,9 @@ class ReceiveAdsfomrm extends Component
         if ($this->theAds->partial) {
             $this->dispatchBrowserEvent('swal', [
                 'position' => 'center',
-                'icon' => 'error',
-                'title' => 'ADS FINAL',
-                'html' => "A ADS INFORMADA PARECE NÃO ESTAR SINALIZADA COMO FINAL. VERIFIQUE O ARQUIVO E TENTE NOVAMENTE.",
+                'icon'     => 'error',
+                'title'    => 'ADS FINAL',
+                'html'     => "A ADS INFORMADA PARECE NÃO ESTAR SINALIZADA COMO FINAL. VERIFIQUE O ARQUIVO E TENTE NOVAMENTE.",
             ]);
 
             $this->removeTempFile($this->theAdsPath);
@@ -217,56 +235,30 @@ class ReceiveAdsfomrm extends Component
 
     public function toSave()
     {
-        if (!$this->note?->WorkForm || $this->note->WorkForm->rejected) {
-            $reason = $this->buildRejectedWorkFormReasonHtml($this->note);
+        try {
+            $policy = app(\App\Contracts\AdsSubmissionPolicy::class);
+            $policy->validateSubmission($this->note, ['amount' => $this->amount]);
+        } catch (\Throwable $e) {
             $this->dispatchBrowserEvent('swal', [
                 'position' => 'center',
-                'icon' => 'error',
-                'title' => 'INFORME INVÁLIDO',
-                'html' => "Esta obra não possui Informe de Obra válido para entrega da ADS." . ($reason ? "<br><br>{$reason}" : ''),
+                'icon'     => 'error',
+                'title'    => 'SUBMISSÃO BLOQUEADA',
+                'html'     => $e->getMessage(),
             ]);
-            return;
-        }
 
-        if (!$this->isEligibleByOrderStatusRule()) {
-            $this->dispatchBrowserEvent('swal', [
-                'position' => 'center',
-                'icon' => 'error',
-                'title' => 'OBRA NAO ELEGIVEL',
-                'html' => 'Para envio da ADS e obrigatorio existir ORDER ativa (status diferente de ENT/ENC).',
-            ]);
-            return;
-        }
-
-        if ($this->isAdsClosed()) {
-            $this->dispatchBrowserEvent('swal', [
-                'position' => 'center',
-                'icon' => 'error',
-                'title' => 'ADS BLOQUEADA',
-                'html' => "Esta obra já possui ADS entregue e não pode ser reenviada.",
-            ]);
             return;
         }
 
         if (trim($this->responsible) == '') {
             $this->dispatchBrowserEvent('swal', [
                 'position' => 'center',
-                'icon' => 'error',
-                'title' => 'SEM RESPONSÁVEL',
-                'html' => "INSIRA O NOME DO RESPONSAVEL POR ESTE INFORME.",
+                'icon'     => 'error',
+                'title'    => 'SEM RESPONSÁVEL',
+                'html'     => "INSIRA O NOME DO RESPONSAVEL POR ESTE INFORME.",
             ]);
+
             return;
         }
-
-        // if (!$this->hasFile) {
-        //     $this->dispatchBrowserEvent('swal', [
-        //         'position' => 'center',
-        //         'icon' => 'error',
-        //         'title' => 'FALTANDO ARQUIVOS',
-        //         'html' => "Favor anexar todos os arquivos necessário para envio da ADS.",
-        //     ]);
-        //     return;
-        // }
 
         if (trim($this->amount)) {
             if (str_contains($this->amount, ',') && str_contains($this->amount, '.')) {
@@ -286,63 +278,67 @@ class ReceiveAdsfomrm extends Component
         } else {
             $this->dispatchBrowserEvent('swal', [
                 'position' => 'center',
-                'icon' => 'error',
-                'title' => 'VALOR ADS NÃO INFORMADO',
-                'html' => "INSIRA O VALOR DA ADS FINAL.",
+                'icon'     => 'error',
+                'title'    => 'VALOR ADS NÃO INFORMADO',
+                'html'     => "INSIRA O VALOR DA ADS FINAL.",
             ]);
+
             return;
         }
 
         $this->dispatchBrowserEvent('alertar', [
-            'title' => 'ENVIAR ADS FINAL',
-            'msg' => $this->buildConfirmMessage(),
-            'icon' => 'warning',
-            'btnOktxt' => 'Sim, Envie!',
-            'btnCanceltxt' => 'Não, Cancele!',
-            'action' => 'confirm_save',
+            'title'         => 'ENVIAR ADS FINAL',
+            'msg'           => $this->buildConfirmMessage(),
+            'icon'          => 'warning',
+            'btnOktxt'      => 'Sim, Envie!',
+            'btnCanceltxt'  => 'Não, Cancele!',
+            'action'        => 'confirm_save',
             'cancel_titulo' => 'Cancelado!',
-            'cancel_msg' => 'Nenhuma ADS foi enviada.',
-
+            'cancel_msg'    => 'Nenhuma ADS foi enviada.',
         ]);
     }
 
     public function save()
     {
+        try {
+            $policy = app(\App\Contracts\AdsSubmissionPolicy::class);
+            $policy->validateSubmission($this->note, ['amount' => $this->amount]);
+        } catch (\Throwable $e) {
+            $this->dispatchBrowserEvent('swal', [
+                'position' => 'center',
+                'icon'     => 'error',
+                'title'    => 'SUBMISSÃO BLOQUEADA',
+                'html'     => $e->getMessage(),
+            ]);
+
+            return;
+        }
+
         $newName = "ADS_IFINAL_" . $this->note->note;
         $newName = $newName . "_N" . str_pad((File::where('file_name', 'like', $newName . "%")->count() + 1), 3, '0', STR_PAD_LEFT);
 
         DB::beginTransaction();
 
         try {
-            $adsForm = $this->note->WorkForm->Adsform;
+            $adsForm             = $this->note->WorkForm->Adsform;
             $lateDeliveryMessage = null;
 
-            if ($adsForm && $this->isAdsClosed()) {
-                DB::rollBack();
-                $this->dispatchBrowserEvent('swal', [
-                    'position' => 'center',
-                    'icon' => 'error',
-                    'title' => 'ADS BLOQUEADA',
-                    'html' => 'Esta ADS já foi entregue e não pode ser reenviada.',
-                ]);
-                return;
-            }
-
             $payload = [
-                'note_id' => $this->note->id,
-                'name' => $this->responsible,
-                'user_id' => Auth()->User()->id,
-                'obs' => $this->observation,
-                'amount' => $this->amount ? $this->amount : 0.00,
+                'note_id'  => $this->note->id,
+                'name'     => $this->responsible,
+                'user_id'  => Auth()->User()->id,
+                'obs'      => $this->observation,
+                'amount'   => $this->amount ? $this->amount : 0.00,
                 'contract' => $this->theAds->getContract(),
-                'center' => $this->theAds->getCenter(),
-                'deposit' => $this->theAds->getDeposit(),
-                'partial' => $this->theAds->getPartial(),
+                'center'   => $this->theAds->getCenter(),
+                'deposit'  => $this->theAds->getDeposit(),
+                'partial'  => $this->theAds->getPartial(),
             ];
 
             if ($adsForm) {
                 if ($adsForm->tacit && !$adsForm->tacit_delivered_at) {
                     $payload['tacit_delivered_at'] = now();
+
                     if ($adsForm->tacit_due_at && now()->greaterThan($adsForm->tacit_due_at)) {
                         $lateDeliveryMessage = 'A ADS está sendo entregue em atraso. Prazo vencido em ' . $adsForm->tacit_due_at->format('d/m/Y H:i:s') . '. Penalidades contratuais podem ser aplicadas.';
                     }
@@ -359,15 +355,15 @@ class ReceiveAdsfomrm extends Component
 
                 if (Storage::exists($caminho)) {
                     $file = File::create([
-                        'note_id' => $this->note->id,
-                        'user_id' => Auth()->User()->id,
-                        'service_id' => null,
-                        'file_name' => $newName,
+                        'note_id'       => $this->note->id,
+                        'user_id'       => Auth()->User()->id,
+                        'service_id'    => null,
+                        'file_name'     => $newName,
                         'original_name' => $this->file->getClientOriginalName(),
-                        'path' => $caminho,
-                        'ext' => $this->file->getClientOriginalExtension(),
-                        'suspicious' => false,
-                        'noexists' => false,
+                        'path'          => $caminho,
+                        'ext'           => $this->file->getClientOriginalExtension(),
+                        'suspicious'    => false,
+                        'noexists'      => false,
                     ]);
 
                     if ($file) {
@@ -382,9 +378,9 @@ class ReceiveAdsfomrm extends Component
 
                     $this->dispatchBrowserEvent('swal', [
                         'position' => 'center',
-                        'icon' => 'warning',
-                        'title' => 'ERRO AO SALVAR',
-                        'html' => '<div class="card bg-primary text-white"><div class="card-body">
+                        'icon'     => 'warning',
+                        'title'    => 'ERRO AO SALVAR',
+                        'html'     => '<div class="card bg-primary text-white"><div class="card-body">
                             <p class="fw-bold">Ocorreu um erro ao salvar um dos, ou o arquivo. Aparentemente não foi concluído o upload. Remova-o(os) da lista e tente novamente. </p>
 
                             </div></div>',
@@ -406,9 +402,9 @@ class ReceiveAdsfomrm extends Component
 
             $this->dispatchBrowserEvent('swal', [
                 'position' => 'center',
-                'icon' => 'error',
-                'title' => 'ERRO AO ENVIAR',
-                'html' => '<div class="card bg-primary text-white"><div class="card-body">
+                'icon'     => 'error',
+                'title'    => 'ERRO AO ENVIAR',
+                'html'     => '<div class="card bg-primary text-white"><div class="card-body">
                             <p class="fw-bold">Ocoreu algum problema ao tentar registrar o envio do Informe parcial. Revise as operações e tente novamente.</p>
 
                             </div></div>' . $th->getMessage(),
@@ -421,19 +417,19 @@ class ReceiveAdsfomrm extends Component
 
     public function cleanAll()
     {
-        $this->process = false;
-        $this->theAds = null;
-        $this->file = null;
-        $this->note = null;
-        $this->notes = null;
-        $this->search = '';
-        $this->observation = '';
-        $this->responsible = '';
-        $this->amount = '';
-        $this->theAdsPath = null;
+        $this->process                 = false;
+        $this->theAds                  = null;
+        $this->file                    = null;
+        $this->note                    = null;
+        $this->notes                   = null;
+        $this->search                  = '';
+        $this->observation             = '';
+        $this->responsible             = '';
+        $this->amount                  = '';
+        $this->theAdsPath              = null;
         $this->lateDeliveryAfterSubmit = null;
-        $this->hasFile = false;
-        $this->hasAsbuiltFile = false;
+        $this->hasFile                 = false;
+        $this->hasAsbuiltFile          = false;
     }
 
     private function isAdsClosed(): bool
@@ -442,25 +438,7 @@ class ReceiveAdsfomrm extends Component
             return false;
         }
 
-        $hasOldAds = $this->note->relationLoaded('OldAds')
-            ? $this->note->OldAds->isNotEmpty()
-            : $this->note->OldAds()->exists();
-
-        if ($hasOldAds) {
-            return true;
-        }
-
-        if (!$this->note?->WorkForm?->Adsform) {
-            return false;
-        }
-
-        $adsForm = $this->note->WorkForm->Adsform;
-
-        if ($adsForm->tacit && !$adsForm->tacit_delivered_at) {
-            return false;
-        }
-
-        return $adsForm->files()->exists() || (bool) $adsForm->tacit_delivered_at;
+        return app(\App\Contracts\AdsSubmissionPolicy::class)->isAdsClosed($this->note);
     }
 
     private function buildConfirmMessage(): string
@@ -483,22 +461,25 @@ class ReceiveAdsfomrm extends Component
     private function buildRejectedWorkFormReasonText(?Note $note = null): string
     {
         $targetNote = $note ?: $this->note;
+
         if (!$targetNote?->WorkForm?->rejected) {
             return '';
         }
 
-        $workForm = $targetNote->WorkForm;
+        $workForm     = $targetNote->WorkForm;
         $latestReturn = $workForm->relationLoaded('LatestReturnwork')
             ? $workForm->LatestReturnwork
             : $workForm->LatestReturnwork()->first();
 
         $category = trim((string) ($latestReturn?->category ?? ''));
-        $textObs = trim((string) ($latestReturn?->text_obs ?? ''));
+        $textObs  = trim((string) ($latestReturn?->text_obs ?? ''));
 
         $parts = [];
+
         if ($category !== '') {
             $parts[] = "Motivo: {$category}";
         }
+
         if ($textObs !== '') {
             $parts[] = "Observação: {$textObs}";
         }
@@ -513,6 +494,7 @@ class ReceiveAdsfomrm extends Component
     private function buildRejectedWorkFormReasonHtml(?Note $note = null): string
     {
         $text = $this->buildRejectedWorkFormReasonText($note);
+
         if ($text === '') {
             return '';
         }
@@ -527,6 +509,7 @@ class ReceiveAdsfomrm extends Component
         }
 
         $hasOrders = $this->note->Orders()->exists();
+
         if (!$hasOrders) {
             return false;
         }
@@ -542,7 +525,7 @@ class ReceiveAdsfomrm extends Component
     public function render()
     {
         return view('livewire.partner.forms.receive-adsfomrm', [
-            'myAds' => $this->theAds
+            'myAds' => $this->theAds,
         ]);
     }
 }
