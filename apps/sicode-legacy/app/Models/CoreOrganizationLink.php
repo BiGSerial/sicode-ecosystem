@@ -11,6 +11,7 @@ class CoreOrganizationLink extends Model
     use HasUuids;
 
     public const STATUS_ACTIVE = 'active';
+    public const STATUS_SUSPENDED = 'suspended';
     public const STATUS_REVOKED = 'revoked';
 
     protected $fillable = [

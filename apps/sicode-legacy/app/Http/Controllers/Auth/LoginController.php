@@ -47,6 +47,22 @@ class LoginController extends Controller
 
     protected function authenticated(Request $request, $user)
     {
+        $context = (string) config('sicode.core.expected_context');
+        $hasSuspendedLink = \App\Models\CoreIdentityLink::query()
+            ->where('legacy_user_id', $user->id)
+            ->where('application_context', $context)
+            ->where('status', \App\Models\CoreIdentityLink::STATUS_SUSPENDED)
+            ->exists();
+
+        if ($hasSuspendedLink) {
+            $this->guard()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $this->username() => [trans('auth.failed')],
+            ]);
+        }
+
         app(CurrentCompanyContext::class)->establishFromLegacyUser($user);
         $request->session()->put('core_launch.auth_source', 'legacy');
     }

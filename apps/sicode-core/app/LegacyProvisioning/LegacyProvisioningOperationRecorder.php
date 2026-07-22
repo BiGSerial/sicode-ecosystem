@@ -45,9 +45,15 @@ final class LegacyProvisioningOperationRecorder
         ?string $remoteLocalId,
         CarbonInterface $now,
     ): void {
+        $dbOutcome = match ($outcome) {
+            LegacyProvisioningOutcome::Suspended, LegacyProvisioningOutcome::Reactivated => 'updated',
+            LegacyProvisioningOutcome::AlreadySuspended, LegacyProvisioningOutcome::AlreadyActive => 'already_provisioned',
+            default => $outcome->value,
+        };
+
         $operation->forceFill([
             'completed_at' => $now,
-            'outcome' => $outcome->value,
+            'outcome' => $dbOutcome,
             'attempt_count' => $attempts,
             'last_error_category' => $errorCategory?->value,
             'remote_local_id' => $remoteLocalId,

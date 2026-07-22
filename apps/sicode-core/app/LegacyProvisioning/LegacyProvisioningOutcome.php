@@ -11,6 +11,10 @@ enum LegacyProvisioningOutcome: string
     case Created = 'created';
     case AlreadyProvisioned = 'already_provisioned';
     case Updated = 'updated';
+    case Suspended = 'suspended';
+    case AlreadySuspended = 'already_suspended';
+    case Reactivated = 'reactivated';
+    case AlreadyActive = 'already_active';
     case Conflict = 'conflict';
     case Rejected = 'rejected';
     case Unavailable = 'unavailable';
@@ -21,6 +25,10 @@ enum LegacyProvisioningOutcome: string
             self::Created,
             self::AlreadyProvisioned,
             self::Updated,
+            self::Suspended,
+            self::AlreadySuspended,
+            self::Reactivated,
+            self::AlreadyActive,
         ], true);
     }
 
@@ -39,13 +47,23 @@ enum LegacyProvisioningOutcome: string
         }
 
         if ($entityType === 'organization') {
-            return $this === self::AlreadyProvisioned
-                ? CoreAuditAction::LegacyOrganizationAlreadyProvisioned
-                : CoreAuditAction::LegacyOrganizationProvisioned;
+            return match ($this) {
+                self::AlreadyProvisioned => CoreAuditAction::LegacyOrganizationAlreadyProvisioned,
+                self::Suspended => CoreAuditAction::LegacyOrganizationSuspended,
+                self::AlreadySuspended => CoreAuditAction::LegacyOrganizationAlreadySuspended,
+                self::Reactivated => CoreAuditAction::LegacyOrganizationReactivated,
+                self::AlreadyActive => CoreAuditAction::LegacyOrganizationAlreadyActive,
+                default => CoreAuditAction::LegacyOrganizationProvisioned,
+            };
         }
 
-        return $this === self::AlreadyProvisioned
-            ? CoreAuditAction::LegacyUserAlreadyProvisioned
-            : CoreAuditAction::LegacyUserProvisioned;
+        return match ($this) {
+            self::AlreadyProvisioned => CoreAuditAction::LegacyUserAlreadyProvisioned,
+            self::Suspended => CoreAuditAction::LegacyUserSuspended,
+            self::AlreadySuspended => CoreAuditAction::LegacyUserAlreadySuspended,
+            self::Reactivated => CoreAuditAction::LegacyUserReactivated,
+            self::AlreadyActive => CoreAuditAction::LegacyUserAlreadyActive,
+            default => CoreAuditAction::LegacyUserProvisioned,
+        };
     }
 }

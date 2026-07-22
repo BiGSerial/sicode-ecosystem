@@ -46,6 +46,23 @@ class Login extends Component
         // dd($remember);
 
         if (Auth::attempt($credentials, $remember)) {
+            $user = Auth::user();
+            $context = (string) config('sicode.core.expected_context');
+            $hasSuspendedLink = \App\Models\CoreIdentityLink::query()
+                ->where('legacy_user_id', $user->id)
+                ->where('application_context', $context)
+                ->where('status', \App\Models\CoreIdentityLink::STATUS_SUSPENDED)
+                ->exists();
+
+            if ($hasSuspendedLink) {
+                Auth::logout();
+                session()->invalidate();
+                $this->show = 0;
+                $this->emitSelf('refresh');
+                $this->addError('email', 'As credenciais fornecidas não correspondem aos nossos registros.');
+                return;
+            }
+
             session()->regenerate();
             app(CurrentCompanyContext::class)->establishFromLegacyUser(Auth::user());
             session()->put('core_launch.auth_source', 'legacy');

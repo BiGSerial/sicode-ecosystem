@@ -37,6 +37,82 @@ final class LegacySpProvisioningClient
         );
     }
 
+    public function suspendOrganization(string $coreOrganizationId, string $idempotencyKey): LegacyProvisioningHttpResult
+    {
+        $configuration = LegacyProvisioningConfiguration::sp();
+        $configuration->assertUsable();
+
+        return $this->post(
+            configuration: $configuration,
+            path: '/api/core/provisioning/organizations/'.$coreOrganizationId.'/suspend',
+            payload: [
+                'client_identifier' => $configuration->clientIdentifier,
+                'client_secret' => $configuration->clientSecret,
+                'contract_version' => $configuration->contractVersion,
+                'idempotency_key' => $idempotencyKey,
+                'core_issuer' => $configuration->issuer,
+            ],
+            entityType: 'organization',
+        );
+    }
+
+    public function reactivateOrganization(string $coreOrganizationId, string $idempotencyKey): LegacyProvisioningHttpResult
+    {
+        $configuration = LegacyProvisioningConfiguration::sp();
+        $configuration->assertUsable();
+
+        return $this->post(
+            configuration: $configuration,
+            path: '/api/core/provisioning/organizations/'.$coreOrganizationId.'/reactivate',
+            payload: [
+                'client_identifier' => $configuration->clientIdentifier,
+                'client_secret' => $configuration->clientSecret,
+                'contract_version' => $configuration->contractVersion,
+                'idempotency_key' => $idempotencyKey,
+                'core_issuer' => $configuration->issuer,
+            ],
+            entityType: 'organization',
+        );
+    }
+
+    public function suspendUser(string $coreSubject, string $idempotencyKey): LegacyProvisioningHttpResult
+    {
+        $configuration = LegacyProvisioningConfiguration::sp();
+        $configuration->assertUsable();
+
+        return $this->post(
+            configuration: $configuration,
+            path: '/api/core/provisioning/users/'.$coreSubject.'/suspend',
+            payload: [
+                'client_identifier' => $configuration->clientIdentifier,
+                'client_secret' => $configuration->clientSecret,
+                'contract_version' => $configuration->contractVersion,
+                'idempotency_key' => $idempotencyKey,
+                'core_issuer' => $configuration->issuer,
+            ],
+            entityType: 'user',
+        );
+    }
+
+    public function reactivateUser(string $coreSubject, string $idempotencyKey): LegacyProvisioningHttpResult
+    {
+        $configuration = LegacyProvisioningConfiguration::sp();
+        $configuration->assertUsable();
+
+        return $this->post(
+            configuration: $configuration,
+            path: '/api/core/provisioning/users/'.$coreSubject.'/reactivate',
+            payload: [
+                'client_identifier' => $configuration->clientIdentifier,
+                'client_secret' => $configuration->clientSecret,
+                'contract_version' => $configuration->contractVersion,
+                'idempotency_key' => $idempotencyKey,
+                'core_issuer' => $configuration->issuer,
+            ],
+            entityType: 'user',
+        );
+    }
+
     /**
      * The current Legacy contract authenticates by payload fields. Keep this
      * class as the only place that builds the raw body so callers never log it.

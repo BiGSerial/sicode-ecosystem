@@ -4,6 +4,10 @@ use App\Console\Commands\RunLegacySpE2eLifecycle;
 use App\LegacyProvisioning\LegacyProvisioningConfiguration;
 use App\LegacyProvisioning\ProvisionLegacySpAccess;
 use App\LegacyProvisioning\ProvisionOrganizationToLegacySp;
+use App\LegacyProvisioning\ReactivateOrganizationInLegacySp;
+use App\LegacyProvisioning\ReactivateUserInLegacySp;
+use App\LegacyProvisioning\SuspendOrganizationInLegacySp;
+use App\LegacyProvisioning\SuspendUserInLegacySp;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\OrganizationMembershipStatus;
@@ -90,6 +94,128 @@ Artisan::command('core:legacy-sp:provision-user {user_id} {organization_id} {--d
 
     return $result->user?->outcome->isSuccessful() === true ? 0 : 1;
 })->purpose('Provision a CORE user projection into Legacy SP after organization provisioning.');
+
+Artisan::command('core:legacy-sp:suspend-organization {organization_id} {--dry-run}', function (): int {
+    /** @var string $organizationId */
+    $organizationId = $this->argument('organization_id');
+    $organization = Organization::query()->find($organizationId);
+
+    if (! $organization instanceof Organization) {
+        $this->error('Organization not found.');
+
+        return 1;
+    }
+
+    if ((bool) $this->option('dry-run')) {
+        return legacySpProvisioningDryRunOrganization($this, $organization);
+    }
+
+    try {
+        $result = app(SuspendOrganizationInLegacySp::class)($organization);
+    } catch (InvalidArgumentException $exception) {
+        $this->error($exception->getMessage());
+
+        return 1;
+    }
+
+    $this->line('outcome='.$result->outcome->value);
+    $this->line('attempts='.$result->attempts);
+
+    return $result->outcome->isSuccessful() ? 0 : 1;
+})->purpose('Suspend a CORE organization projection in Legacy SP.');
+
+Artisan::command('core:legacy-sp:reactivate-organization {organization_id} {--dry-run}', function (): int {
+    /** @var string $organizationId */
+    $organizationId = $this->argument('organization_id');
+    $organization = Organization::query()->find($organizationId);
+
+    if (! $organization instanceof Organization) {
+        $this->error('Organization not found.');
+
+        return 1;
+    }
+
+    if ((bool) $this->option('dry-run')) {
+        return legacySpProvisioningDryRunOrganization($this, $organization);
+    }
+
+    try {
+        $result = app(ReactivateOrganizationInLegacySp::class)($organization);
+    } catch (InvalidArgumentException $exception) {
+        $this->error($exception->getMessage());
+
+        return 1;
+    }
+
+    $this->line('outcome='.$result->outcome->value);
+    $this->line('attempts='.$result->attempts);
+
+    return $result->outcome->isSuccessful() ? 0 : 1;
+})->purpose('Reactivate a CORE organization projection in Legacy SP.');
+
+Artisan::command('core:legacy-sp:suspend-user {user_id} {--dry-run}', function (): int {
+    /** @var string $userId */
+    $userId = $this->argument('user_id');
+    $user = User::query()->find($userId);
+
+    if (! $user instanceof User) {
+        $this->error('User not found.');
+
+        return 1;
+    }
+
+    if ((bool) $this->option('dry-run')) {
+        $this->line('dry_run=ok');
+        $this->line('user='.$user->getKey());
+
+        return 0;
+    }
+
+    try {
+        $result = app(SuspendUserInLegacySp::class)($user);
+    } catch (InvalidArgumentException $exception) {
+        $this->error($exception->getMessage());
+
+        return 1;
+    }
+
+    $this->line('outcome='.$result->outcome->value);
+    $this->line('attempts='.$result->attempts);
+
+    return $result->outcome->isSuccessful() ? 0 : 1;
+})->purpose('Suspend a CORE user projection in Legacy SP.');
+
+Artisan::command('core:legacy-sp:reactivate-user {user_id} {--dry-run}', function (): int {
+    /** @var string $userId */
+    $userId = $this->argument('user_id');
+    $user = User::query()->find($userId);
+
+    if (! $user instanceof User) {
+        $this->error('User not found.');
+
+        return 1;
+    }
+
+    if ((bool) $this->option('dry-run')) {
+        $this->line('dry_run=ok');
+        $this->line('user='.$user->getKey());
+
+        return 0;
+    }
+
+    try {
+        $result = app(ReactivateUserInLegacySp::class)($user);
+    } catch (InvalidArgumentException $exception) {
+        $this->error($exception->getMessage());
+
+        return 1;
+    }
+
+    $this->line('outcome='.$result->outcome->value);
+    $this->line('attempts='.$result->attempts);
+
+    return $result->outcome->isSuccessful() ? 0 : 1;
+})->purpose('Reactivate a CORE user projection in Legacy SP.');
 
 if (! function_exists('legacySpProvisioningDryRunOrganization')) {
     function legacySpProvisioningDryRunOrganization(Command $command, Organization $organization): int

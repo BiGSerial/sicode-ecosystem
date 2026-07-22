@@ -74,8 +74,16 @@ enum CoreAuditAction: string
     case LegacyProvisioningRequested = 'LEGACY_PROVISIONING_REQUESTED';
     case LegacyOrganizationProvisioned = 'LEGACY_ORGANIZATION_PROVISIONED';
     case LegacyOrganizationAlreadyProvisioned = 'LEGACY_ORGANIZATION_ALREADY_PROVISIONED';
+    case LegacyOrganizationSuspended = 'LEGACY_ORGANIZATION_SUSPENDED';
+    case LegacyOrganizationAlreadySuspended = 'LEGACY_ORGANIZATION_ALREADY_SUSPENDED';
+    case LegacyOrganizationReactivated = 'LEGACY_ORGANIZATION_REACTIVATED';
+    case LegacyOrganizationAlreadyActive = 'LEGACY_ORGANIZATION_ALREADY_ACTIVE';
     case LegacyUserProvisioned = 'LEGACY_USER_PROVISIONED';
     case LegacyUserAlreadyProvisioned = 'LEGACY_USER_ALREADY_PROVISIONED';
+    case LegacyUserSuspended = 'LEGACY_USER_SUSPENDED';
+    case LegacyUserAlreadySuspended = 'LEGACY_USER_ALREADY_SUSPENDED';
+    case LegacyUserReactivated = 'LEGACY_USER_REACTIVATED';
+    case LegacyUserAlreadyActive = 'LEGACY_USER_ALREADY_ACTIVE';
     case LegacyProvisioningConflict = 'LEGACY_PROVISIONING_CONFLICT';
     case LegacyProvisioningRejected = 'LEGACY_PROVISIONING_REJECTED';
     case LegacyProvisioningUnavailable = 'LEGACY_PROVISIONING_UNAVAILABLE';

@@ -9,6 +9,10 @@ use App\ApplicationLaunch\IssueApplicationLaunch;
 use App\Contracts\GrantContractApplication;
 use App\CoreAudit\CoreAuditActorType;
 use App\LegacyProvisioning\ProvisionLegacySpAccess;
+use App\LegacyProvisioning\ReactivateOrganizationInLegacySp;
+use App\LegacyProvisioning\ReactivateUserInLegacySp;
+use App\LegacyProvisioning\SuspendOrganizationInLegacySp;
+use App\LegacyProvisioning\SuspendUserInLegacySp;
 use App\Models\Application;
 use App\Models\ApplicationClient;
 use App\Models\ApplicationContext;
@@ -63,6 +67,50 @@ final class RunLegacySpE2eLifecycle
 
             $this->assertSession($session, $fixtures);
 
+            // Exercise User Suspension & Reactivation
+            $userSuspend = app(SuspendUserInLegacySp::class)($fixtures['user']);
+            if (! $userSuspend->outcome->isSuccessful()) {
+                throw new RuntimeException('User suspension failed.');
+            }
+            $suspendedLaunch = $this->issueLaunch($fixtures);
+            $suspendedSession = $this->consumeLaunchOverHttp($suspendedLaunch['callback_url'], $suspendedLaunch['code'], $suspendedLaunch['state'], expectFailure: true);
+            if (($suspendedSession['authenticated'] ?? false) === true) {
+                throw new RuntimeException('Suspended user was unexpectedly allowed to establish session.');
+            }
+
+            $userReactivate = app(ReactivateUserInLegacySp::class)($fixtures['user']);
+            if (! $userReactivate->outcome->isSuccessful()) {
+                throw new RuntimeException('User reactivation failed.');
+            }
+            $reactivatedLaunch = $this->issueLaunch($fixtures);
+            $reactivatedSession = $this->consumeLaunchOverHttp($reactivatedLaunch['callback_url'], $reactivatedLaunch['code'], $reactivatedLaunch['state']);
+            $this->assertSession($reactivatedSession, $fixtures);
+            if ($reactivatedSession['user_id'] !== $session['user_id']) {
+                throw new RuntimeException('User local ID changed after reactivation.');
+            }
+
+            // Exercise Organization Suspension & Reactivation
+            $orgSuspend = app(SuspendOrganizationInLegacySp::class)($fixtures['organization']);
+            if (! $orgSuspend->outcome->isSuccessful()) {
+                throw new RuntimeException('Organization suspension failed.');
+            }
+            $orgSuspendedLaunch = $this->issueLaunch($fixtures);
+            $orgSuspendedSession = $this->consumeLaunchOverHttp($orgSuspendedLaunch['callback_url'], $orgSuspendedLaunch['code'], $orgSuspendedLaunch['state'], expectFailure: true);
+            if (($orgSuspendedSession['authenticated'] ?? false) === true) {
+                throw new RuntimeException('User in suspended organization was unexpectedly allowed to establish session.');
+            }
+
+            $orgReactivate = app(ReactivateOrganizationInLegacySp::class)($fixtures['organization']);
+            if (! $orgReactivate->outcome->isSuccessful()) {
+                throw new RuntimeException('Organization reactivation failed.');
+            }
+            $orgReactivatedLaunch = $this->issueLaunch($fixtures);
+            $orgReactivatedSession = $this->consumeLaunchOverHttp($orgReactivatedLaunch['callback_url'], $orgReactivatedLaunch['code'], $orgReactivatedLaunch['state']);
+            $this->assertSession($orgReactivatedSession, $fixtures);
+            if ($orgReactivatedSession['company_id'] !== $session['company_id']) {
+                throw new RuntimeException('Organization local company ID changed after reactivation.');
+            }
+
             $secretNeedles = [
                 (string) config('legacy_provisioning.sp.client_secret'),
                 (string) config('core_launch.client_secrets.'.$fixtures['client']->client_identifier),
@@ -92,8 +140,14 @@ final class RunLegacySpE2eLifecycle
                         'user' => $idempotent->user->outcome->value,
                     ],
                     'partial_failure' => $partial,
+                    'lifecycle' => [
+                        'user_suspend' => $userSuspend->outcome->value,
+                        'user_reactivate' => $userReactivate->outcome->value,
+                        'organization_suspend' => $orgSuspend->outcome->value,
+                        'organization_reactivate' => $orgReactivate->outcome->value,
+                    ],
                 ],
-                'legacy_session' => $session,
+                'legacy_session' => $orgReactivatedSession,
                 'cleanup_note' => 'Run core:e2e:legacy-sp-lifecycle --run-id='.$runId.' --cleanup-only after Legacy cleanup verification.',
             ];
 
@@ -307,7 +361,7 @@ final class RunLegacySpE2eLifecycle
     /**
      * @return array<string, mixed>
      */
-    private function consumeLaunchOverHttp(string $callbackUrl, string $code, string $state): array
+    private function consumeLaunchOverHttp(string $callbackUrl, string $code, string $state, bool $expectFailure = false): array
     {
         $legacyPort = $this->runtimeInteger('SICODE_E2E_LEGACY_PORT', 8001);
         $callback = str_replace('https://sicode-legacy:'.$legacyPort, 'http://sicode-legacy:'.$legacyPort, $callbackUrl);
@@ -317,11 +371,19 @@ final class RunLegacySpE2eLifecycle
             ->get($callback, ['code' => $code, 'state' => $state]);
 
         if ($response->status() !== 302) {
+            if ($expectFailure) {
+                return ['authenticated' => false];
+            }
+
             throw new RuntimeException('Legacy callback did not establish a redirecting session.');
         }
 
         $location = (string) $response->header('Location');
         if (! str_ends_with($location, '/home')) {
+            if ($expectFailure) {
+                return ['authenticated' => false];
+            }
+
             throw new RuntimeException('Legacy callback did not redirect to the authenticated home route; location='.$location.'.');
         }
 

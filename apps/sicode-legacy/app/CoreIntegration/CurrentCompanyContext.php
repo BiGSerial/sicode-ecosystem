@@ -69,6 +69,32 @@ final class CurrentCompanyContext
         if (! $this->isEstablished()) {
             throw new OrganizationLinkRequired('Current company context is required.');
         }
+
+        if ($this->source() === 'core' && is_string($this->session->get(self::ORGANIZATION_LINK_ID))) {
+            $orgLink = CoreOrganizationLink::query()->whereKey($this->session->get(self::ORGANIZATION_LINK_ID))->first();
+            if (! $orgLink instanceof CoreOrganizationLink || $orgLink->status !== CoreOrganizationLink::STATUS_ACTIVE) {
+                $this->clear();
+                if (auth()->check()) {
+                    auth()->logout();
+                }
+                throw new OrganizationLinkRequired('Current company context is suspended or no longer active.');
+            }
+        }
+
+        if (auth()->check()) {
+            $userId = auth()->id();
+            $context = (string) config('sicode.core.expected_context');
+            $identityLink = \App\Models\CoreIdentityLink::query()
+                ->where('legacy_user_id', $userId)
+                ->where('application_context', $context)
+                ->first();
+
+            if ($identityLink instanceof \App\Models\CoreIdentityLink && $identityLink->status === \App\Models\CoreIdentityLink::STATUS_SUSPENDED) {
+                $this->clear();
+                auth()->logout();
+                throw new OrganizationLinkRequired('User identity projection is suspended.');
+            }
+        }
     }
 
     public function companyId(): ?string

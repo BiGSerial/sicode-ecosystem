@@ -75,5 +75,9 @@ Route::prefix('core/provisioning')
     ->middleware(['throttle:core-provisioning', 'core.provisioning.no_browser'])
     ->group(function () {
         Route::post('/organizations', \App\Http\Controllers\CoreProvisioning\ProvisionOrganizationController::class);
+        Route::post('/organizations/{core_organization_id}/suspend', \App\Http\Controllers\CoreProvisioning\SuspendOrganizationController::class);
+        Route::post('/organizations/{core_organization_id}/reactivate', \App\Http\Controllers\CoreProvisioning\ReactivateOrganizationController::class);
         Route::post('/users', \App\Http\Controllers\CoreProvisioning\ProvisionUserController::class);
+        Route::post('/users/{core_subject}/suspend', \App\Http\Controllers\CoreProvisioning\SuspendUserController::class);
+        Route::post('/users/{core_subject}/reactivate', \App\Http\Controllers\CoreProvisioning\ReactivateUserController::class);
     });

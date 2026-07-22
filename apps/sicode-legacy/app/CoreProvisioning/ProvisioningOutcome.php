@@ -7,6 +7,10 @@ final class ProvisioningOutcome
     public const RESULT_CREATED = 'created';
     public const RESULT_ALREADY_PROVISIONED = 'already_provisioned';
     public const RESULT_UPDATED = 'updated';
+    public const RESULT_SUSPENDED = 'suspended';
+    public const RESULT_ALREADY_SUSPENDED = 'already_suspended';
+    public const RESULT_REACTIVATED = 'reactivated';
+    public const RESULT_ALREADY_ACTIVE = 'already_active';
     public const RESULT_CONFLICT = 'conflict';
     public const RESULT_REJECTED = 'rejected';
 
