@@ -80,7 +80,7 @@ services:
       DB_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
       DB_LOG_HOST: sicode-legacy-mariadb
       DB_LOG_PORT: 3306
-      DB_LOG_DATABASE: sicode_legacy_logs
+      DB_LOG_DATABASE: sicode_legacy
       DB_LOG_USERNAME: sicode_legacy
       DB_LOG_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
       SICODE_UNIT: ${SICODE_LEGACY_UNIT:-sp}
