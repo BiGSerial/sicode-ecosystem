@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\RunLegacySpE2eLifecycle;
 use App\LegacyProvisioning\LegacyProvisioningConfiguration;
 use App\LegacyProvisioning\ProvisionLegacySpAccess;
 use App\LegacyProvisioning\ProvisionOrganizationToLegacySp;
@@ -152,3 +153,7 @@ if (! function_exists('legacySpProvisioningDryRunUser')) {
         return 0;
     }
 }
+
+Artisan::command('core:e2e:legacy-sp-lifecycle {--run-id=} {--cleanup-only}', function (): int {
+    return app(RunLegacySpE2eLifecycle::class)($this);
+})->purpose('Execute full E2E lifecycle test between CORE and Legacy SP.');

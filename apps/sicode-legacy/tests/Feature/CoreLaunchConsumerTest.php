@@ -164,8 +164,8 @@ class CoreLaunchConsumerTest extends TestCase
     public function test_livewire_components_can_read_company_through_local_abstraction(): void
     {
         $company = $this->createCompany();
-        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $company);
-        app(CurrentCompanyContext::class)->set(CoreOrganizationLink::firstOrFail(), $this->runtimeContext());
+        $orgLink = $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $company);
+        app(CurrentCompanyContext::class)->set($orgLink, $this->runtimeContext());
 
         $component = new class {
             use UsesCurrentCompanyContext;
@@ -252,8 +252,8 @@ class CoreLaunchConsumerTest extends TestCase
         $sourceProduction = $this->createProduction($company->id);
 
         $this->actingAs($user);
-        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $company);
-        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), $this->runtimeContext());
+        $orgLink = $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $company);
+        app(CurrentCompanyContext::class)->establishFromCoreLaunch($orgLink, $this->runtimeContext());
 
         $component = new NewProduction();
         $component->production = $sourceProduction;
@@ -279,8 +279,8 @@ class CoreLaunchConsumerTest extends TestCase
         $coreOrganizationId = '11111111-1111-4111-8111-111111111111';
 
         $this->actingAs($user);
-        $this->createOrganizationLink($coreOrganizationId, $this->runtimeContext(), $company);
-        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), $this->runtimeContext());
+        $orgLink = $this->createOrganizationLink($coreOrganizationId, $this->runtimeContext(), $company);
+        app(CurrentCompanyContext::class)->establishFromCoreLaunch($orgLink, $this->runtimeContext());
 
         $component = new NewProduction();
         $component->production = $sourceProduction;
@@ -301,8 +301,8 @@ class CoreLaunchConsumerTest extends TestCase
         $sourceProduction = $this->createProduction($contextCompany->id);
 
         $this->actingAs($user);
-        $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $contextCompany);
-        app(CurrentCompanyContext::class)->establishFromCoreLaunch(CoreOrganizationLink::firstOrFail(), $this->runtimeContext());
+        $orgLink = $this->createOrganizationLink('11111111-1111-4111-8111-111111111111', $this->runtimeContext(), $contextCompany);
+        app(CurrentCompanyContext::class)->establishFromCoreLaunch($orgLink, $this->runtimeContext());
 
         $component = new NewProduction();
         $component->production = $sourceProduction;

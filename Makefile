@@ -1,7 +1,7 @@
 COMPOSE ?= docker compose
 CADDY_HTTP_PORT ?= 8090
 
-.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-migrate
+.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-sp-e2e legacy-sp-e2e-clean legacy-sp-e2e-verify legacy-migrate
 
 up:
 	$(COMPOSE) up -d
@@ -67,6 +67,15 @@ legacy-test-sp:
 legacy-test-matrix:
 	$(MAKE) legacy-test-es
 	$(MAKE) legacy-test-sp
+
+legacy-sp-e2e:
+	bash scripts/e2e/legacy-sp-lifecycle.sh
+
+legacy-sp-e2e-clean:
+	$(COMPOSE) exec -e APP_ENV=testing -e SICODE_E2E_ALLOWED=true -e LEGACY_TEST_DATABASE_ALLOWED=true -e SICODE_UNIT=sp -e SICODE_IDENTITY_MODE=provisioning -e CORE_LAUNCH_CONTEXT=SP sicode-legacy php artisan legacy:e2e:sp-fixtures clean
+
+legacy-sp-e2e-verify:
+	$(COMPOSE) exec -e APP_ENV=testing -e SICODE_E2E_ALLOWED=true -e LEGACY_TEST_DATABASE_ALLOWED=true -e SICODE_UNIT=sp -e SICODE_IDENTITY_MODE=provisioning -e CORE_LAUNCH_CONTEXT=SP sicode-legacy php artisan legacy:e2e:sp-fixtures inspect
 
 legacy-migrate:
 	$(COMPOSE) exec sicode-legacy php artisan migrate

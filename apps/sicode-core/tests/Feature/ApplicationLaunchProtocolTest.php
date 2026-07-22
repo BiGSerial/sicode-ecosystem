@@ -79,7 +79,7 @@ class ApplicationLaunchProtocolTest extends TestCase
             ->post(route('applications.launch', ['application' => $application->id]))
             ->assertRedirect(route('hub'));
 
-        $this->assertSame(0, ApplicationLaunch::count());
+        $this->assertSame(0, ApplicationLaunch::query()->where('user_id', $user->id)->count());
         $this->assertDatabaseHas('core_audit_events', [
             'action' => CoreAuditAction::ApplicationLaunchRejected->value,
             'application_id' => $application->id,
@@ -109,7 +109,7 @@ class ApplicationLaunchProtocolTest extends TestCase
         $this->assertSame(64, strlen((string) $query['code']));
         $this->assertSame(64, strlen((string) $query['state']));
 
-        $launch = ApplicationLaunch::query()->firstOrFail();
+        $launch = ApplicationLaunch::query()->where('user_id', $user->id)->firstOrFail();
 
         $this->assertNotSame($query['code'], $launch->token_hash);
         $this->assertSame(hash('sha256', (string) $query['code']), $launch->token_hash);

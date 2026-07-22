@@ -13,6 +13,10 @@ final class ProvisioningLock
      */
     public function withLock(string $lockKey, callable $callback): mixed
     {
+        if (strlen($lockKey) > 64) {
+            $lockKey = 'cp_lock:'.md5($lockKey);
+        }
+
         $timeoutSeconds = max(1, (int) config('core_provisioning.lock_timeout_seconds', 5));
 
         $acquired = DB::selectOne('SELECT GET_LOCK(?, ?) AS acquired', [$lockKey, $timeoutSeconds]);

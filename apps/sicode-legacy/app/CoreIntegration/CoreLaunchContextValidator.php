@@ -21,7 +21,11 @@ final class CoreLaunchContextValidator
             throw new CoreLaunchContextMismatch('CORE launch exchange rejected.');
         }
 
-        if ($unitContext !== $expectedContext || $unitContext !== $clientContext || $identity->context !== $unitContext) {
+        if (
+            strtoupper($unitContext) !== strtoupper($expectedContext)
+            || strtoupper($unitContext) !== strtoupper($clientContext)
+            || strtoupper($identity->context) !== strtoupper($unitContext)
+        ) {
             throw new CoreLaunchContextMismatch('CORE launch exchange rejected.');
         }
     }

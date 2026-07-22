@@ -198,6 +198,7 @@ final class RunLegacySpE2eLifecycle
             ],
         );
         $context->forceFill([
+            'code' => 'sp',
             'status' => 'active',
             'requires_organization' => true,
             'requires_contract' => true,

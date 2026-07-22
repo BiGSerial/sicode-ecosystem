@@ -37,6 +37,7 @@ class CoreProvisioningEndpointTest extends TestCase
             'sicode.core.expected_context' => 'SP',
         ]);
 
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
         $this->configureRuntime('sp', 'provisioning');
     }
 

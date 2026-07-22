@@ -37,6 +37,20 @@ Auth::routes();
 Route::get('/core/launch/callback', CoreLaunchCallbackController::class)
     ->name('core.launch.callback');
 
+if (app()->environment('testing') && filter_var(env('SICODE_E2E_ALLOWED'), FILTER_VALIDATE_BOOL)) {
+    Route::middleware(['web', 'auth', 'current.company'])
+        ->get('/__testing/core-e2e/current-company', function (\Illuminate\Http\Request $request, \App\CoreIntegration\CurrentCompanyContext $context) {
+            return response()->json([
+                'authenticated' => Auth::check(),
+                'user_id' => Auth::id(),
+                'company_id' => $context->companyId(),
+                'core_organization_id' => $context->coreOrganizationId(),
+                'application_context' => $context->applicationContext(),
+                'source' => $context->source(),
+            ]);
+        });
+}
+
 // Route::prefix('/login')->controller(CustomAuthController::class)->name('login.')->group(function () {
 //     Route::post('/', 'login')->name('login');
 //     Route::get('/logout', 'logout')->name('logout');

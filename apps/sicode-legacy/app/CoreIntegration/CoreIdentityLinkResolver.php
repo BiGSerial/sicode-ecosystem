@@ -12,7 +12,11 @@ final class CoreIdentityLinkResolver
         $links = CoreIdentityLink::query()
             ->where('core_issuer', $identity->issuer)
             ->where('core_subject', $identity->coreSubject)
-            ->where('application_context', $identity->context)
+            ->where(function ($query) use ($identity): void {
+                $query->where('application_context', $identity->context)
+                    ->orWhere('application_context', strtoupper($identity->context))
+                    ->orWhere('application_context', strtolower($identity->context));
+            })
             ->where('status', CoreIdentityLink::STATUS_ACTIVE)
             ->limit(2)
             ->get();
