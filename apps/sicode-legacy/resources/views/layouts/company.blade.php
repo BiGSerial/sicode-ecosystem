@@ -135,6 +135,8 @@ $version = (object) json_decode(file_get_contents(base_path('appver.json')));
             <i class="text-white fs-6">Produção</i>
         @endif
 
+        @include('layouts.partials.regional_switcher')
+
         @if (session('impersonate'))
             <h5 class="text-warning text-uppercase mx-4 align-middle">VOCÊ ESTÁ NA VISÂO DE
                 <strong>{{ Auth()->User()->name }}</strong>.
