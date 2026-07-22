@@ -70,6 +70,8 @@ services:
       APP_ENV: local
       APP_KEY: ${SICODE_LEGACY_APP_KEY:-base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=}
       APP_URL: ${SICODE_LEGACY_APP_URL:-http://localhost:8083}
+      SESSION_COOKIE: sicode_sp_session
+      CACHE_PREFIX: sicode_sp_
       DB_CONNECTION: mysql
       DB_HOST: sicode-legacy-mariadb
       DB_PORT: 3306
@@ -81,21 +83,69 @@ services:
       DB_LOG_DATABASE: sicode_legacy_logs
       DB_LOG_USERNAME: sicode_legacy
       DB_LOG_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
-      SICODE_UNIT: ${SICODE_LEGACY_UNIT:-es}
-      SICODE_IDENTITY_MODE: ${SICODE_LEGACY_IDENTITY_MODE:-reconciliation}
-      SICODE_INSTANCE_CODE: ${SICODE_LEGACY_INSTANCE_CODE:-sicode-legacy-es-local}
-      SICODE_INSTANCE_NAME: ${SICODE_LEGACY_INSTANCE_NAME:-SICODE Legacy ES Local}
-      SICODE_STORAGE_PREFIX: ${SICODE_LEGACY_STORAGE_PREFIX:-legacy/es}
+      SICODE_UNIT: ${SICODE_LEGACY_UNIT:-sp}
+      SICODE_IDENTITY_MODE: ${SICODE_LEGACY_IDENTITY_MODE:-provisioning}
+      SICODE_INSTANCE_CODE: ${SICODE_LEGACY_INSTANCE_CODE:-sicode-legacy-sp-local}
+      SICODE_INSTANCE_NAME: ${SICODE_LEGACY_INSTANCE_NAME:-SICODE Legacy SP Local}
+      SICODE_STORAGE_PREFIX: ${SICODE_LEGACY_STORAGE_PREFIX:-legacy/sp}
       CORE_LAUNCH_EXCHANGE_URL: http://sicode-core:8000/api/core/launch/exchange
-      CORE_LAUNCH_CLIENT_IDENTIFIER: ${SICODE_LEGACY_CORE_CLIENT_IDENTIFIER:-sicode-legacy-local}
+      CORE_LAUNCH_CLIENT_IDENTIFIER: ${SICODE_LEGACY_CORE_CLIENT_IDENTIFIER:-sicode-legacy-sp-local}
       CORE_LAUNCH_CLIENT_SECRET: ${SICODE_LEGACY_CORE_CLIENT_SECRET:-local_legacy_core_secret}
       CORE_LAUNCH_REDIRECT_URI: ${SICODE_LEGACY_CORE_REDIRECT_URI:-http://localhost:8083/core/launch/callback}
-      CORE_LAUNCH_CONTEXT: ${SICODE_LEGACY_CORE_CONTEXT:-ES}
+      CORE_LAUNCH_CONTEXT: ${SICODE_LEGACY_CORE_CONTEXT:-SP}
     depends_on:
       sicode-legacy-mariadb:
         condition: service_healthy
     ports:
       - "${SICODE_LEGACY_HTTP_PORT:-8083}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1:8000/') === false ? 1 : 0);\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  sicode-legacy-es:
+    build:
+      context: .
+      dockerfile: infra/docker/legacy/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./apps/sicode-legacy:/var/www/html
+    env_file:
+      - ./apps/sicode-legacy/.env.example
+    environment:
+      APP_ENV: local
+      APP_NAME: "SICODE Legacy ES"
+      APP_KEY: ${SICODE_LEGACY_ES_APP_KEY:-base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=}
+      APP_URL: ${SICODE_LEGACY_ES_APP_URL:-http://localhost:8084}
+      SESSION_COOKIE: sicode_es_session
+      CACHE_PREFIX: sicode_es_
+      DB_CONNECTION: mysql
+      DB_HOST: tools_mariadb
+      DB_PORT: 3306
+      DB_DATABASE: sicode
+      DB_USERNAME: sicode
+      DB_PASSWORD: ${LOCAL_LEGACY_ES_DATABASE_PASSWORD:-sicode}
+      DB_LOG_HOST: tools_mariadb
+      DB_LOG_PORT: 3306
+      DB_LOG_DATABASE: sicode
+      DB_LOG_USERNAME: sicode
+      DB_LOG_PASSWORD: ${LOCAL_LEGACY_ES_DATABASE_PASSWORD:-sicode}
+      SICODE_UNIT: es
+      SICODE_IDENTITY_MODE: reconciliation
+      SICODE_INSTANCE_CODE: sicode-legacy-es-local
+      SICODE_INSTANCE_NAME: "SICODE Legacy ES Local"
+      SICODE_STORAGE_PREFIX: legacy/es
+      CORE_LAUNCH_EXCHANGE_URL: http://sicode-core:8000/api/core/launch/exchange
+      CORE_LAUNCH_CLIENT_IDENTIFIER: ${SICODE_LEGACY_ES_CORE_CLIENT_IDENTIFIER:-sicode-legacy-es-local}
+      CORE_LAUNCH_CLIENT_SECRET: ${SICODE_LEGACY_ES_CORE_CLIENT_SECRET:-local_legacy_es_core_secret}
+      CORE_LAUNCH_REDIRECT_URI: ${SICODE_LEGACY_ES_CORE_REDIRECT_URI:-http://localhost:8084/core/launch/callback}
+      CORE_LAUNCH_CONTEXT: ES
+    networks:
+      - default
+      - database_default
+    ports:
+      - "${SICODE_LEGACY_ES_HTTP_PORT:-8084}:8000"
     healthcheck:
       test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1:8000/') === false ? 1 : 0);\""]
       interval: 10s
@@ -158,3 +208,9 @@ services:
 volumes:
   sicode-postgres-data:
   sicode-legacy-mariadb-data:
+
+networks:
+  default:
+    name: ecosystem_default
+  database_default:
+    external: true

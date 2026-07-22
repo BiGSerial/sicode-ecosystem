@@ -1,7 +1,7 @@
 COMPOSE ?= docker compose
 CADDY_HTTP_PORT ?= 8090
 
-.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-sp-e2e legacy-sp-e2e-clean legacy-sp-e2e-verify legacy-migrate
+.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-sp-e2e legacy-sp-e2e-clean legacy-sp-e2e-verify legacy-migrate legacy-es-up legacy-es-down legacy-es-logs legacy-es-shell legacy-es-smoke legacy-es-db-inspect legacy-es-schema-diff
 
 up:
 	$(COMPOSE) up -d
@@ -79,3 +79,24 @@ legacy-sp-e2e-verify:
 
 legacy-migrate:
 	$(COMPOSE) exec sicode-legacy php artisan migrate
+
+legacy-es-up:
+	$(COMPOSE) up -d sicode-legacy-es
+
+legacy-es-down:
+	$(COMPOSE) stop sicode-legacy-es
+
+legacy-es-logs:
+	$(COMPOSE) logs -f sicode-legacy-es
+
+legacy-es-shell:
+	$(COMPOSE) exec sicode-legacy-es bash
+
+legacy-es-smoke:
+	$(COMPOSE) exec sicode-legacy-es php artisan tinker --execute="echo 'Unit: '.app(\App\Support\CurrentUnit::class)->value()->value.PHP_EOL; echo 'IdentityMode: '.app(\App\Support\IdentityMode::class)->value.PHP_EOL; echo 'Database: '.config('database.connections.mysql.database').PHP_EOL; echo 'Productions: '.\App\Models\Production::count().PHP_EOL; echo 'WorkReports: '.\App\Models\WorkReport::count().PHP_EOL;"
+
+legacy-es-db-inspect:
+	docker exec -i tools_mariadb mariadb -usicode -psicode sicode -e "SELECT (SELECT COUNT(*) FROM migrations) AS migrations, (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM companies) AS companies, (SELECT COUNT(*) FROM productions) AS productions, (SELECT COUNT(*) FROM work_reports) AS work_reports;"
+
+legacy-es-schema-diff:
+	docker exec -i tools_mariadb mariadb -usicode -psicode sicode -e "SHOW TABLES LIKE 'core_%';"

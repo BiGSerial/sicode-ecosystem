@@ -54,14 +54,19 @@ O compose prepara dois bancos PostgreSQL independentes:
 - `sicode_core`;
 - `sicodesk`.
 
-O Legacy importado usa MariaDB 11 local:
+O Legacy importado suporta duas instâncias locais isoladas sobre a mesma base de código:
 
-- servico: `sicode-legacy-mariadb`;
-- banco padrao: `sicode_legacy`;
-- usuario padrao: `sicode_legacy`;
-- porta host padrao: `3311`;
-- app Legacy: `http://localhost:8083`;
-- via Caddy: `http://localhost:8090/legacy/`.
+- **Instância SP (`sicode-legacy`)**:
+  - servico: `sicode-legacy`;
+  - banco: `sicode_legacy` (container `sicode-legacy-mariadb`, porta host `3311`);
+  - unidade: `sp` (`SICODE_IDENTITY_MODE=provisioning`);
+  - porta host: `http://localhost:8083`.
+
+- **Instância ES (`sicode-legacy-es`)**:
+  - servico: `sicode-legacy-es`;
+  - banco: `sicode` (container MariaDB existente `tools_mariadb`, rede `database_default`);
+  - unidade: `es` (`SICODE_IDENTITY_MODE=reconciliation`);
+  - porta host: `http://localhost:8084`.
 
 As credenciais locais sao descartaveis e configuradas por variaveis do `compose.yaml`; nao versionar `.env` real.
 
