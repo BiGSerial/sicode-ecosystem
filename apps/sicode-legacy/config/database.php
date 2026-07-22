@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Str;
-
 $mysqlSslCaOption = null;
 if (PHP_VERSION_ID >= 80500) {
     // PHP 8.5+: prefer the new constant and avoid deprecated PDO::MYSQL_ATTR_SSL_CA.
@@ -211,6 +209,15 @@ return [
     | provides a richer body of commands than a typical key-value system
     | such as APC or Memcached. Laravel makes it easy to dig right in.
     |
+    | Cada finalidade (lock/default, cache, session, queue) usa uma conexao
+    | fisica propria (host/porta compartilhados, database numerico distinto)
+    | e um prefixo de chave proprio, nao dependendo apenas do numero do
+    | banco Redis para isolamento. O prefixo base por unidade/aplicacao vem
+    | de REDIS_PREFIX (ex.: "sicode:legacy:sp:") e cada conexao concatena o
+    | sufixo de finalidade ("lock:", "cache:", "session:", "queue:").
+    |
+    | Ver docs/standards/redis-isolation.md.
+    |
     */
 
     'redis' => [
@@ -219,7 +226,6 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix'  => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
         ],
 
         'default' => [
@@ -229,6 +235,9 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port'     => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
+            'options'  => [
+                'prefix' => env('REDIS_PREFIX', 'sicode:legacy:local:') . 'lock:',
+            ],
         ],
 
         'cache' => [
@@ -238,6 +247,33 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port'     => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
+            'options'  => [
+                'prefix' => env('REDIS_PREFIX', 'sicode:legacy:local:') . 'cache:',
+            ],
+        ],
+
+        'session' => [
+            'url'      => env('REDIS_URL'),
+            'host'     => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port'     => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_SESSION_DB', '2'),
+            'options'  => [
+                'prefix' => env('REDIS_PREFIX', 'sicode:legacy:local:') . 'session:',
+            ],
+        ],
+
+        'queue' => [
+            'url'      => env('REDIS_URL'),
+            'host'     => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port'     => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_QUEUE_DB', '3'),
+            'options'  => [
+                'prefix' => env('REDIS_PREFIX', 'sicode:legacy:local:') . 'queue:',
+            ],
         ],
 
     ],

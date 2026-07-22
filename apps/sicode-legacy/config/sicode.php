@@ -33,12 +33,42 @@ return [
                 'production.contract_company_fallback',
                 'work_report.tacit_approval',
             ],
+            // Provisioning tecnico (App\Http\Controllers\Core\ProvisioningController
+            // e equivalentes) so existe hoje para SP; ES nunca deve provisionar.
+            'provisioning_allowed' => false,
         ],
         'sp' => [
             'core_context' => 'SP',
             'capabilities' => [
                 'ads.delivery',
             ],
+            'provisioning_allowed' => true,
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Runtime isolation guard
+    |--------------------------------------------------------------------------
+    |
+    | Fingerprint runtime esperado por unidade, usado por
+    | App\Support\RuntimeIsolationGuard no boot para recusar a aplicacao
+    | subir com banco, prefixo Redis, cookie de sessao ou storage de outra
+    | unidade/contexto. Ver docs/standards/redis-isolation.md.
+    |
+    */
+
+    'isolation' => [
+        // Desligado por padrao para nao afetar `php artisan test` (que usa
+        // config('sicode.unit') sintetico via configureRuntime() nos testes
+        // e stores array/sync). Os containers reais SP/ES ligam via
+        // SICODE_ISOLATION_GUARD_ENABLED=true no compose.yaml.
+        'enabled' => env('SICODE_ISOLATION_GUARD_ENABLED', false),
+
+        'expected_database' => env('SICODE_EXPECTED_DATABASE'),
+
+        'redis_prefix_pattern' => 'sicode:legacy:{unit}:',
+        'session_cookie_pattern' => 'sicode_{unit}_session',
+        'storage_prefix_pattern' => 'legacy/{unit}',
     ],
 ];

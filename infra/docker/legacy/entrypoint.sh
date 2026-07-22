@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+mkdir -p \
+    storage/app/public \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/testing \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache
+
+exec "$@"

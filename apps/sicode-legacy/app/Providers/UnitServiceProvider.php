@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Support\{CurrentUnit, EsUnitRuntimeDescriptor, IdentityMode, SicodeUnit, SpUnitRuntimeDescriptor, UnitCapabilities, UnitRuntimeDescriptor};
+use App\Support\{CurrentUnit, EsUnitRuntimeDescriptor, IdentityMode, RuntimeIsolationGuard, SicodeUnit, SpUnitRuntimeDescriptor, UnitCapabilities, UnitRuntimeDescriptor};
 use Illuminate\Support\ServiceProvider;
 
 class UnitServiceProvider extends ServiceProvider
@@ -11,6 +11,10 @@ class UnitServiceProvider extends ServiceProvider
     {
         $this->app->singleton(CurrentUnit::class, function () {
             return new CurrentUnit(SicodeUnit::fromRuntimeConfig(config('sicode.unit')));
+        });
+
+        $this->app->singleton(RuntimeIsolationGuard::class, function ($app) {
+            return new RuntimeIsolationGuard($app->make(CurrentUnit::class));
         });
 
         $this->app->singleton(IdentityMode::class, function () {
@@ -36,5 +40,10 @@ class UnitServiceProvider extends ServiceProvider
                 SicodeUnit::SP => $app->make(\App\Services\Ads\SpAdsSubmissionPolicy::class),
             };
         });
+    }
+
+    public function boot(): void
+    {
+        $this->app->make(RuntimeIsolationGuard::class)->assert();
     }
 }

@@ -80,6 +80,12 @@ return [
             'lock_connection' => 'default',
         ],
 
+        'redis_session' => [
+            'driver'          => 'redis',
+            'connection'      => 'session',
+            'lock_connection' => 'default',
+        ],
+
         'dynamodb' => [
             'driver'   => 'dynamodb',
             'key'      => env('AWS_ACCESS_KEY_ID'),
@@ -104,8 +110,13 @@ return [
     | stores there might be other applications using the same cache. For
     | that reason, you may prefix every cache key to avoid collisions.
     |
+    | O isolamento por unidade/finalidade (cache/session/queue/lock) e feito
+    | na camada de conexao Redis (ver config/database.php e
+    | docs/standards/redis-isolation.md), entao este prefixo permanece vazio
+    | por padrao para as stores Redis e evita duplicar o namespace.
+    |
     */
 
-    'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_cache_'),
+    'prefix' => env('CACHE_PREFIX', ''),
 
 ];

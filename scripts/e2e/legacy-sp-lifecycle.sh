@@ -42,6 +42,7 @@ LEGACY_PID="$(${COMPOSE} exec -T \
   -e SICODE_INSTANCE_CODE=sicode-legacy-sp-e2e \
   -e SICODE_INSTANCE_NAME="SICODE Legacy SP E2E" \
   -e SICODE_STORAGE_PREFIX=legacy/sp/e2e \
+  -e SICODE_ISOLATION_GUARD_ENABLED=false \
   -e CORE_LAUNCH_EXCHANGE_URL="http://sicode-core:${CORE_PORT}/api/core/launch/exchange" \
   -e CORE_LAUNCH_CLIENT_IDENTIFIER=sicode-legacy-sp-e2e \
   -e CORE_LAUNCH_CLIENT_SECRET="${LAUNCH_SECRET}" \
