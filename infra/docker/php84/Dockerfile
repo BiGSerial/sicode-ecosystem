@@ -6,6 +6,9 @@ RUN apt-get update \
         unzip \
         libpq-dev \
         libzip-dev \
+        $PHPIZE_DEPS \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && docker-php-ext-install pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/*
 

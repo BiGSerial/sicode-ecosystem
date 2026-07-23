@@ -1,7 +1,7 @@
 COMPOSE ?= docker compose
 CADDY_HTTP_PORT ?= 8090
 
-.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-sp-e2e legacy-sp-e2e-clean legacy-sp-e2e-verify legacy-migrate legacy-es-up legacy-es-down legacy-es-logs legacy-es-shell legacy-es-smoke legacy-es-db-inspect legacy-es-schema-diff legacy-runtime-up legacy-runtime-down legacy-redis-inspect legacy-runtime-isolation-test legacy-runtime-clear-ephemeral legacy-runtime-smoke legacy-sp-clean-up legacy-sp-clean-down legacy-sp-clean-migrate legacy-sp-clean-smoke legacy-sp-clean-e2e legacy-snapshot-up legacy-snapshot-down legacy-snapshot-inspect
+.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate core-redis-smoke core-runtime-isolation-test core-runtime-clear-ephemeral sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-sp-e2e legacy-sp-e2e-clean legacy-sp-e2e-verify legacy-migrate legacy-es-up legacy-es-down legacy-es-logs legacy-es-shell legacy-es-smoke legacy-es-db-inspect legacy-es-schema-diff legacy-runtime-up legacy-runtime-down legacy-redis-inspect legacy-runtime-isolation-test legacy-runtime-clear-ephemeral legacy-runtime-smoke legacy-sp-clean-up legacy-sp-clean-down legacy-sp-clean-migrate legacy-sp-clean-smoke legacy-sp-clean-e2e legacy-snapshot-up legacy-snapshot-down legacy-snapshot-inspect sp-clean-ci-local
 
 up:
 	$(COMPOSE) up -d
@@ -42,6 +42,28 @@ core-test-pgsql:
 
 core-migrate:
 	$(COMPOSE) exec sicode-core php artisan migrate
+
+core-redis-smoke:
+	$(COMPOSE) exec sicode-core php artisan tinker --execute="\
+		echo 'CORE cache driver: '.config('cache.default').PHP_EOL;\
+		echo 'CORE redis prefix (cache): '.config('database.redis.cache.options.prefix').PHP_EOL;\
+		echo 'CORE session driver: '.config('session.driver').PHP_EOL;\
+		echo 'CORE session connection: '.config('session.connection').PHP_EOL;\
+		echo 'CORE lock connection: '.config('cache.stores.redis.lock_connection').PHP_EOL;\
+		echo 'CORE queue connection: '.config('queue.connections.redis.connection').PHP_EOL;"
+
+core-runtime-isolation-test:
+	$(COMPOSE) exec -e APP_ENV=testing sicode-core php artisan test tests/Unit/CoreRuntimeIsolationGuardTest.php --env=testing
+	$(COMPOSE) exec -e APP_ENV=testing -e CORE_TEST_REDIS_ALLOWED=true sicode-core php artisan test tests/Feature/CoreRedisRuntimeIsolationTest.php --env=testing
+
+# Limpa somente as chaves Redis do namespace sicode:core:global:, por DB E
+# prefixo de finalidade especifico (nunca um wildcard generico por DB
+# inteiro, e NUNCA FLUSHALL/FLUSHDB — o Redis e compartilhado com o Legacy).
+core-runtime-clear-ephemeral:
+	for db_purpose in "12:lock" "13:cache" "14:session" "15:queue"; do \
+		db=$${db_purpose%%:*}; purpose=$${db_purpose##*:}; \
+		$(COMPOSE) exec redis sh -c "redis-cli -n $$db --scan --pattern 'sicode:core:global:'$$purpose':*' | xargs -r -n 100 redis-cli -n $$db del"; \
+	done
 
 sicodesk-shell:
 	$(COMPOSE) exec sicodesk bash
@@ -186,6 +208,11 @@ legacy-sp-clean-smoke:
 
 legacy-sp-clean-e2e:
 	bash scripts/e2e/legacy-sp-lifecycle.sh
+
+# Reproduz localmente o mesmo passo usado no workflow
+# .github/workflows/sp-clean-ci.yml, sem depender do GitHub Actions.
+sp-clean-ci-local:
+	SICODE_E2E_ALLOWED=true LEGACY_TEST_DATABASE_ALLOWED=true bash scripts/e2e/legacy-sp-lifecycle.sh
 
 # ──────────────────────────────────────────────────────────────────────────
 # Snapshot — banco historico de regressao (sicode_legacy, perfil snapshot)

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\LocalAuthentication\LocalLoginIdentifierNormalizer;
+use App\Support\CoreRuntimeIsolationGuard;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(CoreRuntimeIsolationGuard::class);
     }
 
     /**
@@ -23,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->make(CoreRuntimeIsolationGuard::class)->assert();
+
         RateLimiter::for('local-login', function (Request $request): Limit {
             $identifier = (new LocalLoginIdentifierNormalizer)->normalize((string) $request->input('identifier', ''));
 

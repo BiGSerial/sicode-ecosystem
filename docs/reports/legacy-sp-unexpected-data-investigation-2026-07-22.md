@@ -95,3 +95,9 @@ sobre a base já restaurada.
    (cache/sessão/views) não afeta este banco — um reset de dados
    operacionais exige uma ação separada e explicitamente autorizada,
    fora do escopo desta tarefa.
+
+> **Nota (2026-07-23):** o ambiente separado preservado como banco histórico
+> (`sicode-legacy-snapshot`, volume `ecosystem_sicode-legacy-mariadb-data`)
+> foi reclassificado conceitualmente para "Legacy SP Schema Archive" — ver
+> `docs/deployment/legacy-sp-schema-archive.md`. Este relatório permanece
+> como registro histórico da investigação.

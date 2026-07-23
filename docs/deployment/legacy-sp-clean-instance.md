@@ -99,7 +99,7 @@ docker compose exec sicode-core php artisan core:legacy-sp:reactivate-organizati
 - `SICODE_ISOLATION_GUARD_ENABLED=true` — guard completo ativo no boot
 - `SICODE_EXPECTED_DATABASE=sicode_sp` — rejeita qualquer DB diferente
 - Guard novo: rejeita `SICODE_IDENTITY_MODE=provisioning` + DB `sicode_legacy`
-- Sem dependência do volume snapshot
+- Sem dependência do volume legacy-sp-schema-archive (ver `docs/deployment/legacy-sp-schema-archive.md`)
 
 ## Variáveis de ambiente locais (não versionadas)
 

@@ -88,3 +88,9 @@ O ambiente SP canônico usa um volume e banco inteiramente novos:
 - Novo service e volume criados para SP Clean (`sicode-legacy-sp-mariadb` /
   `sicode-legacy-sp-clean-data`).
 - Nenhum dump ou restore executado nesta tarefa.
+
+> **Nota (2026-07-23):** este ambiente foi reclassificado conceitualmente
+> de "Snapshot" para "Legacy SP Schema Archive" — ver
+> `docs/deployment/legacy-sp-schema-archive.md`. Nomes de service/volume
+> não mudaram; este relatório histórico permanece como registro do que
+> aconteceu na época.

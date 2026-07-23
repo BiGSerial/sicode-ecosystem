@@ -18,6 +18,17 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PREFIX: "sicode:core:global:"
+      REDIS_DB: 12
+      REDIS_CACHE_DB: 13
+      REDIS_SESSION_DB: 14
+      REDIS_QUEUE_DB: 15
+      REDIS_QUEUE_CONNECTION: queue
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      SESSION_CONNECTION: redis_session
+      SESSION_COOKIE: sicode_core_session
+      QUEUE_CONNECTION: redis
+      SICODE_CORE_ISOLATION_GUARD_ENABLED: "true"
     depends_on:
       sicode-postgres:
         condition: service_healthy
@@ -207,7 +218,11 @@ services:
       retries: 12
 
   # ──────────────────────────────────────────────────────────────────────────
-  # SICODE Legacy Snapshot — banco histórico para regressão
+  # Legacy SP Schema Archive (nome anterior: "Snapshot", ver
+  # docs/deployment/legacy-sp-schema-archive.md). Nome de service/volume
+  # mantidos por serem infra ja provisionada — so a classificacao mudou.
+  # NAO e backup, NAO contem dados historicos restauraveis (so schema), e
+  # NAO deve ser usado como fonte de restore operacional do SP Clean.
   # Banco: sicode_legacy (sicode-legacy-snapshot-mariadb)
   # SICODE_IDENTITY_MODE: reconciliation  (provisioning DESABILITADO)
   # SICODE_ISOLATION_GUARD_ENABLED: false (não é runtime canônico)

@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Str;
 use Pdo\Mysql;
 
 return [
@@ -141,6 +140,15 @@ return [
     | provides a richer body of commands than a typical key-value system
     | such as Memcached. You may define your connection settings here.
     |
+    | Cada finalidade (lock/default, cache, session, queue) usa uma conexao
+    | fisica propria (host/porta compartilhados, database numerico distinto)
+    | e um prefixo de chave proprio, nao dependendo apenas do numero do
+    | banco Redis para isolamento. O prefixo base do CORE vem de REDIS_PREFIX
+    | ("sicode:core:global:") e cada conexao concatena o sufixo de
+    | finalidade ("lock:", "cache:", "session:", "queue:").
+    |
+    | Ver docs/standards/redis-isolation.md.
+    |
     */
 
     'redis' => [
@@ -149,7 +157,6 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
@@ -159,11 +166,14 @@ return [
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
-            'database' => env('REDIS_DB', '0'),
+            'database' => env('REDIS_DB', '12'),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+            'options' => [
+                'prefix' => env('REDIS_PREFIX', 'sicode:core:global:').'lock:',
+            ],
         ],
 
         'cache' => [
@@ -172,11 +182,46 @@ return [
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
-            'database' => env('REDIS_CACHE_DB', '1'),
+            'database' => env('REDIS_CACHE_DB', '13'),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+            'options' => [
+                'prefix' => env('REDIS_PREFIX', 'sicode:core:global:').'cache:',
+            ],
+        ],
+
+        'redis_session' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_SESSION_DB', '14'),
+            'max_retries' => env('REDIS_MAX_RETRIES', 3),
+            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+            'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
+            'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+            'options' => [
+                'prefix' => env('REDIS_PREFIX', 'sicode:core:global:').'session:',
+            ],
+        ],
+
+        'queue' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_QUEUE_DB', '15'),
+            'max_retries' => env('REDIS_MAX_RETRIES', 3),
+            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+            'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
+            'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+            'options' => [
+                'prefix' => env('REDIS_PREFIX', 'sicode:core:global:').'queue:',
+            ],
         ],
 
     ],

@@ -2,8 +2,8 @@
 
 Data: 2026-07-22
 
-Status: Implementado para SICODE Legacy ES/SP. Normativo para novas
-aplicações integradas ao HUB.
+Status: Implementado para SICODE Legacy ES/SP e SICODE CORE. Normativo para
+novas aplicações integradas ao HUB.
 
 ## Motivação
 
@@ -134,11 +134,40 @@ operam por DB inteiro (`SCAN`, `DBSIZE`, um eventual `FLUSHDB` mal feito):
 | --- | --- | --- | --- | --- |
 | Legacy ES | 0 | 1 | 2 | 3 |
 | Legacy SP | 4 | 5 | 6 | 7 |
+| Legacy SP Schema Archive | 8 | 9 | 10 | 11 |
+| CORE (global) | 12 | 13 | 14 | 15 |
 
 Isso **não substitui** o isolamento por prefixo — é complementar. O padrão
 explicitamente rejeita depender só do número do DB porque DBs Redis não têm
 controle de acesso próprio (qualquer client autenticado no servidor pode dar
 `SELECT` em qualquer DB).
+
+## CORE
+
+O CORE é uma aplicação única (sem múltiplas unidades como ES/SP), então usa
+`sicode:core:global:` como prefixo base — `global:` no lugar de um contexto,
+seguindo a convenção `sicode:{aplicacao}:{contexto}:` descrita acima.
+
+Diferença deliberada de nomenclatura em relação ao Legacy: a conexão Redis
+dedicada à sessão se chama `redis_session` (não `session`), e
+`SESSION_CONNECTION=redis_session` aponta diretamente para essa conexão —
+não há uma cache store `redis_session` separada como no Legacy, porque
+`SessionManager::createRedisDriver()` sempre chama
+`setConnection(config('session.connection'))` depois de resolver a store,
+então o nome da conexão é o que importa fisicamente, não o nome da store.
+`config('session.store')` fica no default do framework (`redis`) sem
+problema, já que a conexão é sobrescrita explicitamente de qualquer forma.
+
+Implementação: `apps/sicode-core/config/database.php` (bloco `redis`,
+conexões `default`/`cache`/`redis_session`/`queue`), `config/cache.php`
+(`lock_connection` fixo em `default`), `config/queue.php`
+(`REDIS_QUEUE_CONNECTION` padrão `queue`).
+
+Guard equivalente: `App\Support\CoreRuntimeIsolationGuard`, registrado em
+`AppServiceProvider::boot()` — ver seção "Guard de boot" abaixo. Testes:
+`tests/Unit/CoreRuntimeIsolationGuardTest.php` e
+`tests/Feature/CoreRedisRuntimeIsolationTest.php`, rodáveis via
+`make core-runtime-isolation-test`.
 
 ## Filas e locks
 
@@ -153,20 +182,33 @@ conexão `default`/`lock:` via `lock_connection` da store `redis` em
 
 ## Guard de boot
 
-`App\Support\RuntimeIsolationGuard` (`app/Support/RuntimeIsolationGuard.php`)
-roda no `boot()` de `UnitServiceProvider` e recusa subir a aplicação se o
-prefixo Redis, cookie de sessão, prefixo de storage, banco de dados ou modo
-de identidade não corresponderem ao padrão esperado da unidade configurada.
-Ver `docs/standards/hub-integrated-application-runtime.md#guards-de-boot`.
+`App\Support\RuntimeIsolationGuard` (`app/Support/RuntimeIsolationGuard.php`,
+Legacy) roda no `boot()` de `UnitServiceProvider` e recusa subir a aplicação
+se o prefixo Redis, cookie de sessão, prefixo de storage, banco de dados ou
+modo de identidade não corresponderem ao padrão esperado da unidade
+configurada. O CORE tem um guard equivalente,
+`App\Support\CoreRuntimeIsolationGuard`, registrado em
+`AppServiceProvider::boot()`: valida o fingerprint exato (DB **e** prefixo)
+de cada uma das 4 conexões Redis, cookie de sessão, issuer, APP_ENV, APP_URL
+e conexões de cache/sessão/fila — nunca aceita apenas "DB dentro de uma
+lista permitida", sempre o par DB+prefixo esperado por conexão. Ver
+`docs/standards/hub-integrated-application-runtime.md#guards-de-boot`.
 
 ## Testes obrigatórios
 
-`tests/Unit/RuntimeIsolationGuardTest.php` (guard, sem I/O) e
+Legacy: `tests/Unit/RuntimeIsolationGuardTest.php` (guard, sem I/O) e
 `tests/Feature/RedisRuntimeIsolationTest.php` (Redis real, requer
 `APP_ENV=testing` + `LEGACY_TEST_REDIS_ALLOWED=true`) provam, contra um
 Redis físico, que cache/sessão/fila/lock de uma unidade não são visíveis
 pela outra mesmo usando a mesma chave lógica. Rodar via
 `make legacy-runtime-isolation-test`.
+
+CORE: `tests/Unit/CoreRuntimeIsolationGuardTest.php` e
+`tests/Feature/CoreRedisRuntimeIsolationTest.php` (Redis real, requer
+`APP_ENV=testing` + `CORE_TEST_REDIS_ALLOWED=true`) provam o mesmo contra o
+namespace `sicode:core:global:`, incluindo sessão HTTP real via
+`SessionManager` (não só client Redis cru) e contadores de rate limiting
+isolados do Legacy. Rodar via `make core-runtime-isolation-test`.
 
 ## Fora de escopo aqui
 

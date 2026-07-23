@@ -54,21 +54,42 @@ O compose prepara dois bancos PostgreSQL independentes:
 - `sicode_core`;
 - `sicodesk`.
 
-O Legacy importado suporta duas instâncias locais isoladas sobre a mesma base de código:
+O Legacy importado suporta tres instâncias locais isoladas sobre a mesma base de código (ver `docs/architecture/legacy-multi-unit-runtime.md`):
 
-- **Instância SP (`sicode-legacy`)**:
+- **SP Clean (`sicode-legacy`)** — instância canônica de desenvolvimento SP:
   - servico: `sicode-legacy`;
-  - banco: `sicode_legacy` (container `sicode-legacy-mariadb`, porta host `3311`);
+  - banco: `sicode_sp` (container `sicode-legacy-sp-mariadb`, porta host `3312`);
   - unidade: `sp` (`SICODE_IDENTITY_MODE=provisioning`);
   - porta host: `http://localhost:8083`.
 
-- **Instância ES (`sicode-legacy-es`)**:
+- **ES (`sicode-legacy-es`)**:
   - servico: `sicode-legacy-es`;
   - banco: `sicode` (container MariaDB existente `tools_mariadb`, rede `database_default`);
   - unidade: `es` (`SICODE_IDENTITY_MODE=reconciliation`);
   - porta host: `http://localhost:8084`.
 
+- **Legacy SP Schema Archive (`sicode-legacy-snapshot`, profile `snapshot`)** — só schema, sem dados históricos restauráveis; não é backup nem fonte de restore. Não sobe com `docker compose up` padrão. Ver `docs/deployment/legacy-sp-schema-archive.md`:
+  - servico: `sicode-legacy-snapshot`;
+  - banco: `sicode_legacy` (container `sicode-legacy-snapshot-mariadb`, porta host `3313`);
+  - porta host: `http://localhost:8085`.
+
 As credenciais locais sao descartaveis e configuradas por variaveis do `compose.yaml`; nao versionar `.env` real.
+
+### Redis local
+
+Instância única (`compose.yaml`, serviço `redis`), isolada por prefixo de
+chave + faixa de DB por aplicação/unidade (ver
+`docs/standards/redis-isolation.md`):
+
+| Aplicação/unidade | Redis DBs | Prefixo |
+| --- | --- | --- |
+| Legacy ES | 0-3 | `sicode:legacy:es:` |
+| Legacy SP Clean | 4-7 | `sicode:legacy:sp:` |
+| Legacy SP Schema Archive | 8-11 | `sicode:legacy:snapshot:` |
+| CORE (global) | 12-15 | `sicode:core:global:` |
+
+Gates: `make core-redis-smoke`, `make core-runtime-isolation-test`,
+`make legacy-redis-inspect`, `make legacy-runtime-isolation-test`.
 
 ## Fachada oficial
 
@@ -83,6 +104,8 @@ make core-quality
 make core-test
 make core-test-pgsql
 make core-migrate
+make core-redis-smoke
+make core-runtime-isolation-test
 make sicodesk-test
 make sicodesk-migrate
 make legacy-test

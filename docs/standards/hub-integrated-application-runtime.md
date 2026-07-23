@@ -2,7 +2,8 @@
 
 Data: 2026-07-22
 
-Status: Normativo. Referência de implementação: SICODE Legacy (ES e SP).
+Status: Normativo. Referência de implementação: SICODE Legacy (ES e SP) e
+SICODE CORE.
 
 ## Objetivo
 
@@ -63,6 +64,15 @@ QUEUE_CONNECTION=redis
 SESSION_COOKIE=sicode_{unit}_session
 REDIS_PREFIX=sicode:{app}:{unit}:
 ```
+
+Variação aceita: uma aplicação sem múltiplas unidades pode nomear a conexão
+Redis dedicada à sessão diretamente (ex.: `redis_session`) e apontar
+`SESSION_CONNECTION` para esse nome, em vez de usar uma store `SESSION_STORE`
+separada — funciona porque `SessionManager::createRedisDriver()` sempre
+sobrescreve a conexão via `setConnection(config('session.connection'))`
+depois de resolver a store. O CORE usa essa variação
+(`SESSION_CONNECTION=redis_session`, sem `SESSION_STORE` dedicada) — ver
+`docs/standards/redis-isolation.md#core` e `docs/deployment/core-redis-runtime.md`.
 
 ## Storage
 
@@ -146,6 +156,16 @@ Referência de implementação: `App\Support\RuntimeIsolationGuard`
 por padrão em testes (para não exigir que toda suíte de testes replique o
 fingerprint completo de runtime).
 
+Segunda referência de implementação, para uma aplicação sem múltiplas
+unidades: `App\Support\CoreRuntimeIsolationGuard`
+(`apps/sicode-core/app/Support/CoreRuntimeIsolationGuard.php`), acionado em
+`AppServiceProvider::boot()`, habilitado via
+`SICODE_CORE_ISOLATION_GUARD_ENABLED=true`. Valida o fingerprint exato
+(database **e** prefixo, não uma lista de valores aceitos) de cada conexão
+Redis nomeada, cookie de sessão (incluindo rejeição explícita de cookies do
+padrão Legacy), issuer, `APP_ENV`, `APP_URL` e as conexões de
+cache/sessão/fila configuradas.
+
 ## Auditoria e logs
 
 - eventos de auditoria nunca registram segredo, token bruto ou payload de
@@ -186,6 +206,15 @@ Toda aplicação HUB deve ter, no mínimo:
 3. teste de que o contexto CORE (Launch) é validado contra a unidade
    configurada;
 4. teste de que provisioning/reconciliation não se misturam.
+
+Para uma aplicação sem múltiplas unidades/contextos (caso do CORE), os
+itens 3 e 4 não se aplicam da mesma forma — o CORE não tem unidades nem
+modo provisioning/reconciliation próprio. O equivalente mínimo aceito é: 1 e
+2 tal como descritos, mais um teste de que os contadores de rate limiting
+(quando aplicável) não colidem fisicamente com nenhuma outra
+aplicação/contexto compartilhando o mesmo Redis. Ver
+`apps/sicode-core/tests/Unit/CoreRuntimeIsolationGuardTest.php` e
+`apps/sicode-core/tests/Feature/CoreRedisRuntimeIsolationTest.php`.
 
 Ver `apps/sicode-legacy/tests/Unit/RuntimeIsolationGuardTest.php` e
 `apps/sicode-legacy/tests/Feature/RedisRuntimeIsolationTest.php` como

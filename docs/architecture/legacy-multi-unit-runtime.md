@@ -2,7 +2,7 @@
 
 Data: 2026-07-20 (atualizado 2026-07-23)
 
-Este documento define a fundacao local para executar uma unica base de codigo do SICODE Legacy em tres contextos isolados: ES, SP Clean e Snapshot.
+Este documento define a fundacao local para executar uma unica base de codigo do SICODE Legacy em tres contextos isolados: ES, SP Clean e Legacy SP Schema Archive (nome anterior: "Snapshot" — ver nota abaixo).
 
 ## Tres contextos (atualizado 2026-07-23)
 
@@ -10,9 +10,15 @@ Este documento define a fundacao local para executar uma unica base de codigo do
 | --- | --- | --- | --- | --- |
 | Legacy ES | `sicode-legacy-es` | `sicode` (tools_mariadb) | externo | Dados históricos reais ES |
 | Legacy SP Clean | `sicode-legacy` | `sicode_sp` | `sp-clean-data` | Desenvolvimento SP canônico |
-| Legacy Snapshot | `sicode-legacy-snapshot` | `sicode_legacy` | `mariadb-data` | Regressão/compatibilidade |
+| Legacy SP Schema Archive | `sicode-legacy-snapshot` | `sicode_legacy` | `mariadb-data` | Compatibilidade de schema (não é dado histórico restaurável) |
 
-O Snapshot não recebe Launch oficial, não executa provisioning e não representa o SP canônico. Ver `docs/deployment/legacy-sp-clean-instance.md` e `docs/deployment/legacy-snapshot-instance.md`.
+> Renomeado de "Legacy Snapshot" para "Legacy SP Schema Archive" em
+> 2026-07-23 — o volume contém apenas schema, não dados históricos
+> restauráveis, e não serve como backup nem fonte de restore operacional.
+> Service/volume Docker não foram renomeados (só a classificação
+> conceitual). Ver `docs/deployment/legacy-sp-schema-archive.md`.
+
+O Schema Archive não recebe Launch oficial, não executa provisioning e não representa o SP canônico. Ver `docs/deployment/legacy-sp-clean-instance.md` e `docs/deployment/legacy-sp-schema-archive.md`.
 
 
 
