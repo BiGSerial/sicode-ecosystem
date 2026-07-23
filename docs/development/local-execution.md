@@ -2,6 +2,15 @@
 
 Este documento descreve a estrutura executavel inicial do monorepo.
 
+> **Nota (2026-07-23):** CORE e Legacy foram extraidos para repositorios
+> irmaos independentes (`sicode-core`, `sicode-legacy`) — nao vivem mais
+> em `apps/` deste repositorio. Ver
+> `docs/inventory/repository-split-ownership.md` e
+> `docs/architecture/component-version-compatibility.md`. Este documento
+> ainda descreve a topologia antiga (`apps/sicode-core`,
+> `apps/sicode-legacy`) em alguns trechos abaixo — tratar como historico
+> ate uma revisao completa.
+
 ## Matriz de stacks
 
 | Aplicacao | Laravel | Livewire | PHP | Banco |

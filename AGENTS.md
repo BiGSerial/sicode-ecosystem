@@ -13,15 +13,17 @@ Antes de alterar qualquer area de identidade, autenticacao, autorizacao, organiz
 
 O canon arquitetural e normativo. Agentes nao podem reinterpretar suas regras silenciosamente.
 
-Topologia executavel:
+Topologia (desde 2026-07-23, ver `docs/inventory/repository-split-ownership.md`):
 
-- `apps/sicode-core`: Laravel 13, Livewire 4, PHP 8.4, PostgreSQL.
-- `apps/sicodesk`: Laravel 13, Livewire 4, PHP 8.4, PostgreSQL.
-- `apps/sicode-legacy`: reservado para o Legacy real; Laravel 10, Livewire 2 e PHP compativel com o codigo importado.
+- Este repositorio (`sicode-ecosystem`) e o monorepo de integracao: infraestrutura compartilhada, contratos entre aplicacoes, padroes do HUB, testes E2E, CI de integracao e `apps/sicodesk` (Laravel 13, Livewire 4, PHP 8.4, PostgreSQL — unico app que permanece embutido).
+- CORE e Legacy sao repositorios irmaos independentes, consumidos por `compose.yaml` via build context externo (`../sicode-core`, `../sicode-legacy` — ver `docs/architecture/component-version-compatibility.md`):
+  - `sicode-core` (`/home/will/code/sicode-core` local; `BiGSerial/sicode-core` remoto futuro): Laravel 13, Livewire 4, PHP 8.4, PostgreSQL.
+  - `sicode-legacy` (`/home/will/code/sicode-legacy` local; `BiGSerial/sicode-legacy` remoto futuro): Laravel 10, Livewire 2, PHP 8.2, MariaDB, runtime multiunidade ES/SP.
+- Para trabalhar em codigo de identidade, autenticacao, Hub, Application Launch ou provisioning client, va para o repositorio `sicode-core`. Para runtime multiunidade, reconciliation ES, provisioning SP ou regras ADS, va para `sicode-legacy`. Cada um tem seu proprio `AGENTS.md`.
 
 Nao misture dependencias entre apps. Nao aplique padroes Laravel 13/Livewire 4 ao Legacy.
 
-O inventario em `docs/inventory/legacy/` e evidencia tecnica do Legacy, nao arquitetura canonica. Nao refaca o inventario sem motivo tecnico documentado.
+Docs `docs/architecture/core-*.md` e `docs/architecture/legacy-*.md` continuam neste repositorio por enquanto (nao removidos na separacao) mas a implementacao real vive nos repositorios irmaos — trate esses docs como referencia historica/contexto, nao como garantia de que o codigo ainda esta aqui. O inventario em `docs/inventory/legacy/` e evidencia tecnica do Legacy, nao arquitetura canonica. Nao refaca o inventario sem motivo tecnico documentado.
 
 Antes de alterar codigo ou documentacao tecnica, identifique as skills aplicaveis em `docs/skills/`, leia cada skill relevante e liste as skills utilizadas na saida final. Skills obrigatorias por area:
 

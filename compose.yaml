@@ -1,29 +1,23 @@
 services:
   # ──────────────────────────────────────────────────────────────────────────
-  # SICODE CORE — build context/imagem configuraveis para a transicao
-  # embedded -> external (ver docs/architecture/component-version-compatibility.md).
-  # Default (embedded): build context = raiz deste repo (Dockerfile
-  # compartilhado com SICODESK), source dir = apps/sicode-core.
-  # External (repo sicode-core irmao, mesmo diretorio serve de build
-  # context e source dir porque o Dockerfile la vive dentro do proprio
-  # repo):
-  #   SICODE_CORE_BUILD_CONTEXT=../sicode-core
-  #   SICODE_CORE_SOURCE_DIR=../sicode-core
-  #   SICODE_CORE_DOCKERFILE=infra/docker/Dockerfile
+  # SICODE CORE — repositorio externo (../sicode-core), ver
+  # docs/architecture/component-version-compatibility.md e
+  # docs/inventory/repository-split-ownership.md. apps/sicode-core foi
+  # removido deste monorepo; o modo "embedded" nao existe mais.
   # Consumo por imagem versionada (CI/producao): pre-pull SICODE_CORE_IMAGE:
   # SICODE_CORE_TAG e rodar sem --build; compose usa a imagem existente em
   # vez de reconstruir.
   # ──────────────────────────────────────────────────────────────────────────
   sicode-core:
     build:
-      context: ${SICODE_CORE_BUILD_CONTEXT:-.}
-      dockerfile: ${SICODE_CORE_DOCKERFILE:-infra/docker/php84/Dockerfile}
+      context: ${SICODE_CORE_BUILD_CONTEXT:-../sicode-core}
+      dockerfile: ${SICODE_CORE_DOCKERFILE:-infra/docker/Dockerfile}
     image: ${SICODE_CORE_IMAGE:-sicode-core}:${SICODE_CORE_TAG:-local}
     working_dir: /var/www/html
     volumes:
-      - ${SICODE_CORE_SOURCE_DIR:-./apps/sicode-core}:/var/www/html
+      - ${SICODE_CORE_SOURCE_DIR:-../sicode-core}:/var/www/html
     env_file:
-      - ${SICODE_CORE_SOURCE_DIR:-./apps/sicode-core}/.env.example
+      - ${SICODE_CORE_SOURCE_DIR:-../sicode-core}/.env.example
     environment:
       APP_ENV: local
       APP_KEY: ${SICODE_CORE_APP_KEY:-base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
@@ -93,28 +87,25 @@ services:
   # SICODE_IDENTITY_MODE: provisioning
   # Redis DBs: 4-7  |  Cookie: sicode_sp_session
   #
-  # Build context/imagem: mesma logica embedded->external do sicode-core
-  # (ver comentario la e docs/architecture/component-version-compatibility.md).
-  # Imagem UNICA sicode-legacy — ES e SP usam a mesma imagem, so tags
-  # diferentes (SICODE_LEGACY_SP_TAG / SICODE_LEGACY_ES_TAG) por convencao
-  # de deploy, nunca builds separados.
-  # External:
-  #   SICODE_LEGACY_BUILD_CONTEXT=../sicode-legacy
-  #   SICODE_LEGACY_SOURCE_DIR=../sicode-legacy
-  #   SICODE_LEGACY_DOCKERFILE=infra/docker/Dockerfile
+  # Repositorio externo (../sicode-legacy), ver
+  # docs/architecture/component-version-compatibility.md e
+  # docs/inventory/repository-split-ownership.md. apps/sicode-legacy foi
+  # removido deste monorepo. Imagem UNICA sicode-legacy — ES e SP usam a
+  # mesma imagem, so tags diferentes (SICODE_LEGACY_SP_TAG /
+  # SICODE_LEGACY_ES_TAG) por convencao de deploy, nunca builds separados.
   # ──────────────────────────────────────────────────────────────────────────
   sicode-legacy:
     build:
-      context: ${SICODE_LEGACY_BUILD_CONTEXT:-.}
-      dockerfile: ${SICODE_LEGACY_DOCKERFILE:-infra/docker/legacy/Dockerfile}
+      context: ${SICODE_LEGACY_BUILD_CONTEXT:-../sicode-legacy}
+      dockerfile: ${SICODE_LEGACY_DOCKERFILE:-infra/docker/Dockerfile}
     image: ${SICODE_LEGACY_IMAGE:-sicode-legacy}:${SICODE_LEGACY_SP_TAG:-local}
     working_dir: /var/www/html
     volumes:
-      - ${SICODE_LEGACY_SOURCE_DIR:-./apps/sicode-legacy}:/var/www/html
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html
       - sicode-legacy-sp-clean-storage-app:/var/www/html/storage/app
       - sicode-legacy-sp-clean-storage-logs:/var/www/html/storage/logs
     env_file:
-      - ${SICODE_LEGACY_SOURCE_DIR:-./apps/sicode-legacy}/.env.example
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}/.env.example
     environment:
       APP_ENV: local
       APP_KEY: ${SICODE_LEGACY_APP_KEY:-base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=}
@@ -179,16 +170,16 @@ services:
   # ──────────────────────────────────────────────────────────────────────────
   sicode-legacy-es:
     build:
-      context: ${SICODE_LEGACY_BUILD_CONTEXT:-.}
-      dockerfile: ${SICODE_LEGACY_DOCKERFILE:-infra/docker/legacy/Dockerfile}
+      context: ${SICODE_LEGACY_BUILD_CONTEXT:-../sicode-legacy}
+      dockerfile: ${SICODE_LEGACY_DOCKERFILE:-infra/docker/Dockerfile}
     image: ${SICODE_LEGACY_IMAGE:-sicode-legacy}:${SICODE_LEGACY_ES_TAG:-local}
     working_dir: /var/www/html
     volumes:
-      - ${SICODE_LEGACY_SOURCE_DIR:-./apps/sicode-legacy}:/var/www/html
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html
       - sicode-legacy-es-storage-app:/var/www/html/storage/app
       - sicode-legacy-es-storage-logs:/var/www/html/storage/logs
     env_file:
-      - ${SICODE_LEGACY_SOURCE_DIR:-./apps/sicode-legacy}/.env.example
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}/.env.example
     environment:
       APP_ENV: local
       APP_NAME: "SICODE Legacy ES"
@@ -259,16 +250,16 @@ services:
   # ──────────────────────────────────────────────────────────────────────────
   sicode-legacy-snapshot:
     build:
-      context: ${SICODE_LEGACY_BUILD_CONTEXT:-.}
-      dockerfile: ${SICODE_LEGACY_DOCKERFILE:-infra/docker/legacy/Dockerfile}
+      context: ${SICODE_LEGACY_BUILD_CONTEXT:-../sicode-legacy}
+      dockerfile: ${SICODE_LEGACY_DOCKERFILE:-infra/docker/Dockerfile}
     image: ${SICODE_LEGACY_IMAGE:-sicode-legacy}:${SICODE_LEGACY_SP_TAG:-local}
     working_dir: /var/www/html
     volumes:
-      - ${SICODE_LEGACY_SOURCE_DIR:-./apps/sicode-legacy}:/var/www/html
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html
       - sicode-legacy-sp-storage-app:/var/www/html/storage/app
       - sicode-legacy-sp-storage-logs:/var/www/html/storage/logs
     env_file:
-      - ${SICODE_LEGACY_SOURCE_DIR:-./apps/sicode-legacy}/.env.example
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}/.env.example
     environment:
       APP_ENV: local
       APP_KEY: ${SICODE_LEGACY_APP_KEY:-base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=}

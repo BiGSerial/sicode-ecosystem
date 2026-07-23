@@ -1,21 +1,14 @@
 COMPOSE ?= docker compose
 CADDY_HTTP_PORT ?= 8090
 
-# Alterna entre consumir apps/sicode-core e apps/sicode-legacy deste
-# repositorio (embedded, default/rollback temporario) ou os repositorios
-# irmaos ../sicode-core e ../sicode-legacy (external, novo padrao). Ver
-# docs/architecture/component-version-compatibility.md.
-#   make legacy-test-matrix SICODE_APPS_MODE=external
-SICODE_APPS_MODE ?= embedded
-
-ifeq ($(SICODE_APPS_MODE),external)
-export SICODE_CORE_BUILD_CONTEXT ?= ../sicode-core
-export SICODE_CORE_SOURCE_DIR ?= ../sicode-core
-export SICODE_CORE_DOCKERFILE ?= infra/docker/Dockerfile
-export SICODE_LEGACY_BUILD_CONTEXT ?= ../sicode-legacy
-export SICODE_LEGACY_SOURCE_DIR ?= ../sicode-legacy
-export SICODE_LEGACY_DOCKERFILE ?= infra/docker/Dockerfile
-endif
+# CORE e Legacy sao consumidos dos repositorios irmaos por default
+# (../sicode-core, ../sicode-legacy — ver compose.yaml e
+# docs/architecture/component-version-compatibility.md). apps/sicode-core
+# e apps/sicode-legacy foram removidos deste monorepo; o antigo modo
+# "embedded" nao existe mais. Para apontar para outro caminho (ex.: um
+# checkout em local diferente, ou consumir imagem versionada em vez de
+# buildar), sobrescreva as variaveis SICODE_CORE_*/SICODE_LEGACY_* — ver
+# os comentarios de cada servico em compose.yaml.
 
 .PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate core-redis-smoke core-runtime-isolation-test core-runtime-clear-ephemeral sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-sp-e2e legacy-sp-e2e-clean legacy-sp-e2e-verify legacy-migrate legacy-es-up legacy-es-down legacy-es-logs legacy-es-shell legacy-es-smoke legacy-es-db-inspect legacy-es-schema-diff legacy-runtime-up legacy-runtime-down legacy-redis-inspect legacy-runtime-isolation-test legacy-runtime-clear-ephemeral legacy-runtime-smoke legacy-sp-clean-up legacy-sp-clean-down legacy-sp-clean-migrate legacy-sp-clean-smoke legacy-sp-clean-e2e legacy-snapshot-up legacy-snapshot-down legacy-snapshot-inspect sp-clean-ci-local
 
@@ -175,7 +168,7 @@ legacy-runtime-isolation-test:
 # porque o Redis e compartilhado entre aplicacoes. Nao apaga storage/app,
 # storage/logs nem dados de banco.
 legacy-runtime-clear-ephemeral:
-	docker run --rm -v "$${SICODE_LEGACY_SOURCE_DIR:-$$(pwd)/apps/sicode-legacy}/storage:/storage" alpine sh -c '\
+	docker run --rm -v "$${SICODE_LEGACY_SOURCE_DIR:-$$(pwd)/../sicode-legacy}/storage:/storage" alpine sh -c '\
 		find /storage/framework/cache -type f ! -name ".gitignore" -delete; \
 		find /storage/framework/sessions -type f ! -name ".gitignore" -delete; \
 		find /storage/framework/views -type f ! -name ".gitignore" -delete'
