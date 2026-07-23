@@ -1,0 +1,91 @@
+name: SP Clean bootstrap CI
+
+# Valida o bootstrap do runtime Legacy SP Clean (CORE + Legacy SP) de ponta
+# a ponta: migrations, provisioning real, Launch, sessao Legacy, lifecycle
+# e cleanup. NAO sobe o Legacy ES real nem o schema archive (perfil
+# `snapshot`) — ver docs/ci/sp-clean-integration-pipeline.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sp-clean-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sp-clean-bootstrap:
+    name: SP Clean bootstrap
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build CORE and Legacy images
+        run: docker compose build sicode-core sicode-legacy
+
+      - name: Start required services
+        run: |
+          docker compose up -d --wait redis sicode-postgres sicode-legacy-sp-mariadb sicode-core sicode-legacy
+
+      - name: Confirm Legacy ES and the schema archive are not running
+        run: |
+          running="$(docker compose ps --status running --format '{{.Service}}')"
+          echo "Running services:"
+          echo "$running"
+          if echo "$running" | grep -qE '^(sicode-legacy-es|sicode-legacy-snapshot)$'; then
+            echo "::error::Legacy ES or the schema archive (snapshot profile) is running — this pipeline must never start them."
+            exit 1
+          fi
+
+      - name: Confirm the SP Clean database starts empty
+        run: |
+          count="$(docker compose exec -T sicode-legacy-sp-mariadb mariadb -usicode_sp -psp_dev_password -N -B \
+            -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='sicode_sp';")"
+          echo "sicode_sp table count before migrations: ${count}"
+          if [ "${count}" != "0" ]; then
+            echo "::error::sicode_sp already has ${count} tables before migrations — database is not empty."
+            exit 1
+          fi
+
+      - name: Run CORE migrations
+        run: docker compose exec -T sicode-core php artisan migrate --force
+
+      - name: Run Legacy SP Clean migrations
+        run: docker compose exec -T sicode-legacy php artisan migrate --force
+
+      - name: Run SP Clean lifecycle E2E (provisioning, Launch, lifecycle, cleanup, verify-clean)
+        env:
+          SICODE_E2E_ALLOWED: "true"
+          LEGACY_TEST_DATABASE_ALLOWED: "true"
+        run: bash scripts/e2e/legacy-sp-lifecycle.sh
+
+      - name: ADS vertical slice (Legacy SP)
+        run: |
+          docker compose exec -T \
+            -e APP_ENV=testing \
+            -e LEGACY_TEST_DATABASE_ALLOWED=true \
+            -e SICODE_UNIT=sp \
+            -e SICODE_ISOLATION_GUARD_ENABLED=false \
+            sicode-legacy php artisan test tests/Feature/AdsDomainUnitRulesTest.php --env=testing
+
+      - name: CORE test suite (includes Redis runtime isolation guard)
+        env:
+          CORE_TEST_REDIS_ALLOWED: "true"
+        run: |
+          docker compose exec -T -e APP_ENV=testing -e CORE_TEST_REDIS_ALLOWED=true sicode-core php artisan test --env=testing
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=500
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down --remove-orphans
