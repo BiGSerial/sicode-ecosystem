@@ -37,7 +37,18 @@ ${{ github.workspace }}/
   GitHub App dedicado em vez de PAT pessoal.
 - Cadastro do secret (passo manual, não versionado): Settings → Secrets
   and variables → Actions → New repository secret, nome
-  `SICODE_COMPONENTS_READ_TOKEN`, valor = o PAT fine-grained.
+  `SICODE_COMPONENTS_READ_TOKEN`, valor = o PAT fine-grained. Ou, via
+  `gh` CLI (pede o valor de forma interativa, não o recebe como
+  argumento):
+
+  ```bash
+  gh secret set SICODE_COMPONENTS_READ_TOKEN \
+    --repo BiGSerial/sicode-ecosystem
+  ```
+
+  Enquanto este secret não existir, o job falha explicitamente no passo
+  "Checkout CORE" (`Input required and not supplied: token`) — esse é o
+  único bloqueio conhecido para o E2E remoto completo.
 - Um passo de validação confere que os HEADs dos checkouts batem com as
   refs esperadas e que `apps/sicode-core`/`apps/sicode-legacy` não
   reapareceram no checkout do Ecosystem, falhando explicitamente caso
@@ -45,6 +56,33 @@ ${{ github.workspace }}/
 - Todos os passos do Ecosystem rodam com `working-directory: ecosystem`;
   o Compose resolve `../sicode-core`/`../sicode-legacy` para os checkouts
   irmãos automaticamente (mesmos defaults usados localmente).
+
+### Histórico de refs
+
+`CORE_REF`/`LEGACY_REF` são fixados por SHA completo (40 caracteres), nunca
+por `main` — cada atualização é uma decisão explícita de "este é o commit
+validado", não um acompanhamento automático da branch. Isso evita que uma
+mudança não revisada em `sicode-core`/`sicode-legacy` altere o
+comportamento do E2E do Ecosystem sem uma atualização correspondente aqui.
+
+| Data | CORE_REF | LEGACY_REF | Motivo |
+| --- | --- | --- | --- |
+| 2026-07-23 | `0f3c9fae8da58aee1062b36c0db8b7cbfce50c8f` | `0692af424fd0c540747eaf948c4e0834fadb8f19` | HEADs confirmados no momento da separação dos monorepos (primeiro teste remoto planejado). |
+| 2026-07-23 | `5acde66bbcfdbd99142e1b40b5bc717207c8162f` | `c739506bb9760a8c0e455d698379edfe34b7406a` | HEADs após os fixes reais de `quality.yml` em CORE (env Redis do teste de isolamento) e Legacy (baseline PHPStan + env Redis do teste de isolamento) — ambos com `quality.yml` verde nesses SHAs. |
+
+**Rerodar o workflow** após atualizar as refs (push já dispara
+automaticamente; para forçar sem novo commit):
+
+```bash
+gh workflow run sp-clean-ci.yml --repo BiGSerial/sicode-ecosystem --ref main
+```
+
+**Condição para substituir SHA por tag `v0.1.0+`**: somente depois que os
+três pipelines (`quality.yml` do CORE, `quality.yml` do Legacy, e este
+`sp-clean-ci.yml` rodando o E2E completo) passarem com o secret
+`SICODE_COMPONENTS_READ_TOKEN` cadastrado — ver
+`docs/architecture/component-version-compatibility.md`. Não criar a tag
+antes disso.
 
 ## O que o workflow faz
 

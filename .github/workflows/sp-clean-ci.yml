@@ -38,8 +38,10 @@ env:
   # Refs fixas dos componentes validados nesta integracao. Nao usar `main`
   # como referencia canonica de release — atualizar estas SHAs (ou trocar
   # por tags v0.1.0+ quando existirem) apenas apos validacao explicita.
-  CORE_REF: 0f3c9fae8da58aee1062b36c0db8b7cbfce50c8f
-  LEGACY_REF: 0692af424fd0c540747eaf948c4e0834fadb8f19
+  # Atualizado apos os fixes de quality.yml em CORE/Legacy (ver
+  # docs/ci/sp-clean-integration-pipeline.md#historico-de-refs).
+  CORE_REF: 5acde66bbcfdbd99142e1b40b5bc717207c8162f
+  LEGACY_REF: c739506bb9760a8c0e455d698379edfe34b7406a
 
 jobs:
   sp-clean-bootstrap:
