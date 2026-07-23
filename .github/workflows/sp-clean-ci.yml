@@ -4,6 +4,16 @@ name: SP Clean bootstrap CI
 # a ponta: migrations, provisioning real, Launch, sessao Legacy, lifecycle
 # e cleanup. NAO sobe o Legacy ES real nem o schema archive (perfil
 # `snapshot`) — ver docs/ci/sp-clean-integration-pipeline.md.
+#
+# Estado atual (embedded): builda apps/sicode-core e apps/sicode-legacy
+# deste proprio repositorio (default de compose.yaml). Isso muda quando
+# os repositorios BiGSerial/sicode-core e BiGSerial/sicode-legacy forem
+# criados e apps/sicode-core / apps/sicode-legacy forem removidos deste
+# repo (ver docs/architecture/component-version-compatibility.md e
+# docs/inventory/repository-split-ownership.md) — nesse momento, ative o
+# bloco "Checkout CORE and Legacy (external, apos remotes existirem)"
+# abaixo (hoje comentado, so placeholder — os remotes nao existem ainda)
+# e remova o passo "Build CORE and Legacy images (embedded)".
 
 on:
   push:
@@ -28,7 +38,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build CORE and Legacy images
+      # Placeholder — ativar somente apos BiGSerial/sicode-core e
+      # BiGSerial/sicode-legacy existirem como remotes reais (ver "Comandos
+      # para criar os remotes" no relatorio da tarefa de separacao). Faz
+      # checkout dos repos irmaos em ../sicode-core / ../sicode-legacy,
+      # igual a topologia local de desenvolvimento, e exporta as variaveis
+      # que compose.yaml ja entende (SICODE_CORE_BUILD_CONTEXT etc.).
+      # - name: Checkout CORE and Legacy (external, apos remotes existirem)
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: BiGSerial/sicode-core
+      #     path: sicode-core-checkout
+      # - name: Checkout Legacy (external)
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: BiGSerial/sicode-legacy
+      #     path: sicode-legacy-checkout
+      # - name: Point compose.yaml at the checked-out repos
+      #   run: |
+      #     echo "SICODE_CORE_BUILD_CONTEXT=../sicode-core-checkout" >> "$GITHUB_ENV"
+      #     echo "SICODE_CORE_SOURCE_DIR=../sicode-core-checkout" >> "$GITHUB_ENV"
+      #     echo "SICODE_CORE_DOCKERFILE=infra/docker/Dockerfile" >> "$GITHUB_ENV"
+      #     echo "SICODE_LEGACY_BUILD_CONTEXT=../sicode-legacy-checkout" >> "$GITHUB_ENV"
+      #     echo "SICODE_LEGACY_SOURCE_DIR=../sicode-legacy-checkout" >> "$GITHUB_ENV"
+      #     echo "SICODE_LEGACY_DOCKERFILE=infra/docker/Dockerfile" >> "$GITHUB_ENV"
+      #
+      # Alternativa por imagem versionada (sem checkout de codigo-fonte):
+      # definir SICODE_CORE_IMAGE/SICODE_CORE_TAG e
+      # SICODE_LEGACY_IMAGE/SICODE_LEGACY_SP_TAG, `docker pull` das duas, e
+      # pular o passo de build abaixo (compose usa a imagem existente).
+
+      - name: Build CORE and Legacy images (embedded)
         run: docker compose build sicode-core sicode-legacy
 
       - name: Start required services
