@@ -7,6 +7,12 @@ services:
   # Consumo por imagem versionada (CI/producao): pre-pull SICODE_CORE_IMAGE:
   # SICODE_CORE_TAG e rodar sem --build; compose usa a imagem existente em
   # vez de reconstruir.
+  #
+  # Este arquivo (compose.yaml) usa a imagem autocontida (vendor/ instalado
+  # no build, ver infra/docker/Dockerfile do sicode-core) — e o que roda em
+  # CI. Bind mount do checkout do host para hot reload em desenvolvimento
+  # local fica em compose.dev.yaml (ver docs/development/local-execution.md),
+  # nunca aqui.
   # ──────────────────────────────────────────────────────────────────────────
   sicode-core:
     build:
@@ -14,8 +20,6 @@ services:
       dockerfile: ${SICODE_CORE_DOCKERFILE:-infra/docker/Dockerfile}
     image: ${SICODE_CORE_IMAGE:-sicode-core}:${SICODE_CORE_TAG:-local}
     working_dir: /var/www/html
-    volumes:
-      - ${SICODE_CORE_SOURCE_DIR:-../sicode-core}:/var/www/html
     env_file:
       - ${SICODE_CORE_SOURCE_DIR:-../sicode-core}/.env.example
     environment:
@@ -101,7 +105,6 @@ services:
     image: ${SICODE_LEGACY_IMAGE:-sicode-legacy}:${SICODE_LEGACY_SP_TAG:-local}
     working_dir: /var/www/html
     volumes:
-      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html
       - sicode-legacy-sp-clean-storage-app:/var/www/html/storage/app
       - sicode-legacy-sp-clean-storage-logs:/var/www/html/storage/logs
     env_file:
@@ -175,7 +178,6 @@ services:
     image: ${SICODE_LEGACY_IMAGE:-sicode-legacy}:${SICODE_LEGACY_ES_TAG:-local}
     working_dir: /var/www/html
     volumes:
-      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html
       - sicode-legacy-es-storage-app:/var/www/html/storage/app
       - sicode-legacy-es-storage-logs:/var/www/html/storage/logs
     env_file:
@@ -255,7 +257,6 @@ services:
     image: ${SICODE_LEGACY_IMAGE:-sicode-legacy}:${SICODE_LEGACY_SP_TAG:-local}
     working_dir: /var/www/html
     volumes:
-      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html
       - sicode-legacy-sp-storage-app:/var/www/html/storage/app
       - sicode-legacy-sp-storage-logs:/var/www/html/storage/logs
     env_file:

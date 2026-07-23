@@ -1,0 +1,29 @@
+# Override de desenvolvimento local — bind mount do checkout do host por
+# cima da imagem autocontida, para hot reload de codigo sem rebuild.
+#
+# NAO usar em CI/produção: nesse contexto, o checkout do host pode nao ter
+# vendor/ instalado (ex.: runner do GitHub Actions faz apenas checkout do
+# codigo-fonte), e montar por cima de /var/www/html apagaria o vendor/ que
+# a imagem instalou durante o build (ver infra/docker/Dockerfile em
+# sicode-core/sicode-legacy). CI e producao usam compose.yaml sozinho.
+#
+# Uso:
+#   docker compose -f compose.yaml -f compose.dev.yaml up -d
+#   (a fachada do Makefile ja aplica isso por padrao — ver COMPOSE no topo)
+
+services:
+  sicode-core:
+    volumes:
+      - ${SICODE_CORE_SOURCE_DIR:-../sicode-core}:/var/www/html
+
+  sicode-legacy:
+    volumes:
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html
+
+  sicode-legacy-es:
+    volumes:
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html
+
+  sicode-legacy-snapshot:
+    volumes:
+      - ${SICODE_LEGACY_SOURCE_DIR:-../sicode-legacy}:/var/www/html

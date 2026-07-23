@@ -92,6 +92,39 @@ Para consumir uma imagem já publicada em vez de buildar localmente: defina
 `--build` — o Compose reaproveita a imagem local já marcada com aquela tag
 em vez de reconstruir.
 
+### Imagem autocontida vs. hot reload local (`compose.dev.yaml`)
+
+As imagens de `sicode-core`/`sicode-legacy` são **autocontidas**: o
+`infra/docker/Dockerfile` de cada repositório copia `composer.json`/
+`composer.lock`, roda `composer install` e `composer dump-autoload`
+durante o build, e `COPY .` o restante da aplicação — `vendor/` fica
+dentro da imagem. Isso é obrigatório para CI/produção, onde o checkout
+do runner não tem `vendor/` (não é versionado).
+
+`compose.yaml` sozinho (o arquivo que CI usa) **não** monta o código do
+host por cima da imagem — ele roda exatamente o que foi empacotado no
+build. Para desenvolvimento local com hot reload (editar código sem
+rebuild), o bind mount do checkout do host fica isolado em
+`compose.dev.yaml`, que sobrescreve `/var/www/html` por cima da imagem:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml up -d
+```
+
+A fachada `Makefile` já aplica os dois arquivos por padrão (variável
+`COMPOSE` no topo) — `make up`/`make build`/etc. têm hot reload
+automaticamente. **Não é preciso rodar `composer install` manualmente no
+host** para o Compose funcionar: a imagem já tem `vendor/` embutido: o
+bind mount de `compose.dev.yaml` sobrescreve o diretório da aplicação
+inteiro (incluindo `vendor/`) pelo do host, então se você quiser hot
+reload **e** os pacotes PHP atualizados, rode `composer install` no
+próprio repositório do componente (`sicode-core`/`sicode-legacy`) — do
+jeito que já se fazia antes desta mudança.
+
+`make sp-clean-ci-local` e o workflow `sp-clean-ci.yml` usam somente
+`compose.yaml` (sem o override de dev), para reproduzir exatamente o que
+roda em CI.
+
 ## Subindo o stack
 
 ```bash
@@ -362,6 +395,15 @@ desse token em workflow, `.env`, compose, logs, ou documentação.
 - **Serviço `sicode-legacy-es` ou `sicode-legacy-snapshot` sobe sem ter
   sido pedido**: confira o `profile`/lista de serviços passada a
   `docker compose up` — o E2E SP Clean nunca deve subir esses dois.
+- **`require(/var/www/html/vendor/autoload.php): No such file or
+  directory` ao subir `sicode-core`/`sicode-legacy`**: a imagem não foi
+  rebuildada após uma mudança no Dockerfile, ou você está usando
+  `compose.yaml` sozinho (sem `compose.dev.yaml`) num checkout que nunca
+  teve `composer install` rodado — nesse caso o problema é a imagem em
+  si, não o host: rode `docker compose build sicode-core sicode-legacy`
+  de novo. Se isso persistir em CI, veja
+  `docs/ci/sp-clean-integration-pipeline.md` — as imagens devem ser
+  autocontidas (ver seção acima).
 - **`sicode_sp` não está vazio antes das migrations**: rode
   `docker compose down --remove-orphans` (sem `-v`) e confirme que não há
   volume `sicode-legacy-sp-clean-storage-*` residual de uma execução

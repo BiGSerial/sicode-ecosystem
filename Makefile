@@ -1,4 +1,4 @@
-COMPOSE ?= docker compose
+COMPOSE ?= docker compose -f compose.yaml -f compose.dev.yaml
 CADDY_HTTP_PORT ?= 8090
 
 # CORE e Legacy sao consumidos dos repositorios irmaos por default

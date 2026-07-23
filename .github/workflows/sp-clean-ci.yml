@@ -40,8 +40,8 @@ env:
   # por tags v0.1.0+ quando existirem) apenas apos validacao explicita.
   # Atualizado apos os fixes de quality.yml em CORE/Legacy (ver
   # docs/ci/sp-clean-integration-pipeline.md#historico-de-refs).
-  CORE_REF: 5acde66bbcfdbd99142e1b40b5bc717207c8162f
-  LEGACY_REF: c739506bb9760a8c0e455d698379edfe34b7406a
+  CORE_REF: c4da65ff3a758daa9cd4b5876558b9f5995f495a
+  LEGACY_REF: 635e17828766a231d416c31ab626fb796e95457a
 
 jobs:
   sp-clean-bootstrap:

@@ -69,6 +69,7 @@ comportamento do E2E do Ecosystem sem uma atualização correspondente aqui.
 | --- | --- | --- | --- |
 | 2026-07-23 | `0f3c9fae8da58aee1062b36c0db8b7cbfce50c8f` | `0692af424fd0c540747eaf948c4e0834fadb8f19` | HEADs confirmados no momento da separação dos monorepos (primeiro teste remoto planejado). |
 | 2026-07-23 | `5acde66bbcfdbd99142e1b40b5bc717207c8162f` | `c739506bb9760a8c0e455d698379edfe34b7406a` | HEADs após os fixes reais de `quality.yml` em CORE (env Redis do teste de isolamento) e Legacy (baseline PHPStan + env Redis do teste de isolamento) — ambos com `quality.yml` verde nesses SHAs. |
+| 2026-07-23 | `c4da65ff3a758daa9cd4b5876558b9f5995f495a` | `635e17828766a231d416c31ab626fb796e95457a` | HEADs após tornar as imagens de CORE e Legacy autocontidas (`composer install` no build, `vendor/` dentro da imagem) — primeiro E2E remoto (run `30043250467`) falhou em "Start required services" com `vendor/autoload.php: No such file or directory`, porque o Dockerfile de ambos nunca instalava dependências nem copiava a aplicação; só funcionava localmente porque `compose.yaml` montava o checkout do host (com `vendor/` já instalado manualmente) por cima da imagem. Validado localmente de ponta a ponta (build, up --wait, migrations, E2E, ADS, suíte CORE) antes deste push. |
 
 **Rerodar o workflow** após atualizar as refs (push já dispara
 automaticamente; para forçar sem novo commit):
@@ -84,10 +85,24 @@ três pipelines (`quality.yml` do CORE, `quality.yml` do Legacy, e este
 `docs/architecture/component-version-compatibility.md`. Não criar a tag
 antes disso.
 
+## Imagens autocontidas (vendor/ no build, não no host)
+
+`compose.yaml` **não** monta o checkout do host por cima de
+`/var/www/html` (esse bind mount, usado só para hot reload em
+desenvolvimento, vive em `compose.dev.yaml` e nunca é usado em CI — ver
+`docs/development/local-execution.md`). Os `Dockerfile` de
+`sicode-core`/`sicode-legacy` copiam `composer.json`/`composer.lock`,
+rodam `composer install`, copiam o restante do código e geram o
+autoloader — `vendor/autoload.php` fica dentro da imagem. Isso é
+necessário porque o checkout de CI nunca tem `vendor/` (não é
+versionado): sem isso, `docker compose up --wait` falha com
+`require(.../vendor/autoload.php): No such file or directory` assim que
+o container tenta subir.
+
 ## O que o workflow faz
 
 1. build das imagens `sicode-core`/`sicode-legacy` a partir dos checkouts
-   irmãos;
+   irmãos (imagens autocontidas, ver acima);
 2. `docker compose up -d --wait` de `redis`, `sicode-postgres`,
    `sicode-legacy-sp-mariadb`, `sicode-core`, `sicode-legacy`;
 3. confirma que Legacy ES (`sicode-legacy-es`) e o schema archive
