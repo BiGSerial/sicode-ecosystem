@@ -12,9 +12,44 @@ Clean + CORE sobe do zero de forma correta: migrations, provisioning real,
 Launch, sessão Legacy, lifecycle e cleanup — sem depender de estado
 deixado por execuções anteriores.
 
+## Checkout multi-repositório
+
+CORE e Legacy não vivem mais neste monorepo (`apps/sicode-core` e
+`apps/sicode-legacy` foram removidos — ver
+`docs/inventory/repository-split-ownership.md`). O workflow faz checkout
+lado a lado dos três repositórios no runner:
+
+```text
+${{ github.workspace }}/
+├── ecosystem
+├── sicode-core
+└── sicode-legacy
+```
+
+- `sicode-core` e `sicode-legacy` são checkouts de
+  `BiGSerial/sicode-core`/`BiGSerial/sicode-legacy`, fixados por SHA
+  (`env.CORE_REF`/`env.LEGACY_REF` no workflow) — não por `main`.
+- Autenticação: secret `SICODE_COMPONENTS_READ_TOKEN` (fine-grained PAT
+  somente leitura — `Contents: Read-only`, `Metadata: Read-only`,
+  restrito a `sicode-core`/`sicode-legacy`). O `GITHUB_TOKEN` padrão do
+  Actions não alcança repositórios irmãos privados, por isso não é usado
+  para esses dois checkouts. Evolução recomendada se a automação crescer:
+  GitHub App dedicado em vez de PAT pessoal.
+- Cadastro do secret (passo manual, não versionado): Settings → Secrets
+  and variables → Actions → New repository secret, nome
+  `SICODE_COMPONENTS_READ_TOKEN`, valor = o PAT fine-grained.
+- Um passo de validação confere que os HEADs dos checkouts batem com as
+  refs esperadas e que `apps/sicode-core`/`apps/sicode-legacy` não
+  reapareceram no checkout do Ecosystem, falhando explicitamente caso
+  contrário.
+- Todos os passos do Ecosystem rodam com `working-directory: ecosystem`;
+  o Compose resolve `../sicode-core`/`../sicode-legacy` para os checkouts
+  irmãos automaticamente (mesmos defaults usados localmente).
+
 ## O que o workflow faz
 
-1. build das imagens `sicode-core`/`sicode-legacy`;
+1. build das imagens `sicode-core`/`sicode-legacy` a partir dos checkouts
+   irmãos;
 2. `docker compose up -d --wait` de `redis`, `sicode-postgres`,
    `sicode-legacy-sp-mariadb`, `sicode-core`, `sicode-legacy`;
 3. confirma que Legacy ES (`sicode-legacy-es`) e o schema archive

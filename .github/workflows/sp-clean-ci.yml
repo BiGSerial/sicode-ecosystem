@@ -5,15 +5,21 @@ name: SP Clean bootstrap CI
 # e cleanup. NAO sobe o Legacy ES real nem o schema archive (perfil
 # `snapshot`) — ver docs/ci/sp-clean-integration-pipeline.md.
 #
-# Estado atual (embedded): builda apps/sicode-core e apps/sicode-legacy
-# deste proprio repositorio (default de compose.yaml). Isso muda quando
-# os repositorios BiGSerial/sicode-core e BiGSerial/sicode-legacy forem
-# criados e apps/sicode-core / apps/sicode-legacy forem removidos deste
-# repo (ver docs/architecture/component-version-compatibility.md e
-# docs/inventory/repository-split-ownership.md) — nesse momento, ative o
-# bloco "Checkout CORE and Legacy (external, apos remotes existirem)"
-# abaixo (hoje comentado, so placeholder — os remotes nao existem ainda)
-# e remova o passo "Build CORE and Legacy images (embedded)".
+# Modelo multi-repositorio: CORE e Legacy nao vivem mais neste monorepo
+# (apps/sicode-core e apps/sicode-legacy foram removidos). Este workflow
+# faz checkout lado a lado dos repositorios irmaos privados
+# BiGSerial/sicode-core e BiGSerial/sicode-legacy, fixados por SHA
+# (CORE_REF / LEGACY_REF abaixo), e builda as imagens a partir desses
+# checkouts — nunca a partir de codigo copiado para dentro deste repo.
+#
+# Autenticacao entre repositorios privados: usa o secret
+# SICODE_COMPONENTS_READ_TOKEN (fine-grained PAT somente leitura, escopo
+# restrito a sicode-core e sicode-legacy — Contents: Read-only, Metadata:
+# Read-only). O GITHUB_TOKEN padrao NAO e usado para esses checkouts
+# porque e limitado ao repositorio que contem o workflow e nao alcanca
+# repositorios irmaos privados. Ver docs/development/local-execution.md
+# para o passo manual de cadastro do secret e para a evolucao recomendada
+# (GitHub App) caso a automacao cresca.
 
 on:
   push:
@@ -25,57 +31,94 @@ permissions:
   contents: read
 
 concurrency:
-  group: sp-clean-ci-${{ github.ref }}
+  group: sp-clean-integration-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  # Refs fixas dos componentes validados nesta integracao. Nao usar `main`
+  # como referencia canonica de release — atualizar estas SHAs (ou trocar
+  # por tags v0.1.0+ quando existirem) apenas apos validacao explicita.
+  CORE_REF: 0f3c9fae8da58aee1062b36c0db8b7cbfce50c8f
+  LEGACY_REF: 0692af424fd0c540747eaf948c4e0834fadb8f19
 
 jobs:
   sp-clean-bootstrap:
     name: SP Clean bootstrap
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout Ecosystem
+        uses: actions/checkout@v6
+        with:
+          path: ecosystem
+          persist-credentials: false
 
-      # Placeholder — ativar somente apos BiGSerial/sicode-core e
-      # BiGSerial/sicode-legacy existirem como remotes reais (ver "Comandos
-      # para criar os remotes" no relatorio da tarefa de separacao). Faz
-      # checkout dos repos irmaos em ../sicode-core / ../sicode-legacy,
-      # igual a topologia local de desenvolvimento, e exporta as variaveis
-      # que compose.yaml ja entende (SICODE_CORE_BUILD_CONTEXT etc.).
-      # - name: Checkout CORE and Legacy (external, apos remotes existirem)
-      #   uses: actions/checkout@v4
-      #   with:
-      #     repository: BiGSerial/sicode-core
-      #     path: sicode-core-checkout
-      # - name: Checkout Legacy (external)
-      #   uses: actions/checkout@v4
-      #   with:
-      #     repository: BiGSerial/sicode-legacy
-      #     path: sicode-legacy-checkout
-      # - name: Point compose.yaml at the checked-out repos
-      #   run: |
-      #     echo "SICODE_CORE_BUILD_CONTEXT=../sicode-core-checkout" >> "$GITHUB_ENV"
-      #     echo "SICODE_CORE_SOURCE_DIR=../sicode-core-checkout" >> "$GITHUB_ENV"
-      #     echo "SICODE_CORE_DOCKERFILE=infra/docker/Dockerfile" >> "$GITHUB_ENV"
-      #     echo "SICODE_LEGACY_BUILD_CONTEXT=../sicode-legacy-checkout" >> "$GITHUB_ENV"
-      #     echo "SICODE_LEGACY_SOURCE_DIR=../sicode-legacy-checkout" >> "$GITHUB_ENV"
-      #     echo "SICODE_LEGACY_DOCKERFILE=infra/docker/Dockerfile" >> "$GITHUB_ENV"
-      #
-      # Alternativa por imagem versionada (sem checkout de codigo-fonte):
-      # definir SICODE_CORE_IMAGE/SICODE_CORE_TAG e
-      # SICODE_LEGACY_IMAGE/SICODE_LEGACY_SP_TAG, `docker pull` das duas, e
-      # pular o passo de build abaixo (compose usa a imagem existente).
+      - name: Checkout CORE
+        uses: actions/checkout@v6
+        with:
+          repository: BiGSerial/sicode-core
+          ref: ${{ env.CORE_REF }}
+          token: ${{ secrets.SICODE_COMPONENTS_READ_TOKEN }}
+          path: sicode-core
+          persist-credentials: false
 
-      - name: Build CORE and Legacy images (embedded)
+      - name: Checkout Legacy
+        uses: actions/checkout@v6
+        with:
+          repository: BiGSerial/sicode-legacy
+          ref: ${{ env.LEGACY_REF }}
+          token: ${{ secrets.SICODE_COMPONENTS_READ_TOKEN }}
+          path: sicode-legacy
+          persist-credentials: false
+
+      - name: Validate checkouts against expected refs
+        run: |
+          set -euo pipefail
+
+          core_head="$(git -C sicode-core rev-parse HEAD)"
+          legacy_head="$(git -C sicode-legacy rev-parse HEAD)"
+          ecosystem_head="$(git -C ecosystem rev-parse HEAD)"
+
+          echo "sicode-core HEAD:    ${core_head}"
+          echo "sicode-legacy HEAD:  ${legacy_head}"
+          echo "ecosystem HEAD:      ${ecosystem_head}"
+
+          status=0
+
+          if [ "${core_head}" != "${CORE_REF}" ]; then
+            echo "::error::sicode-core HEAD (${core_head}) does not match CORE_REF (${CORE_REF})"
+            status=1
+          fi
+
+          if [ "${legacy_head}" != "${LEGACY_REF}" ]; then
+            echo "::error::sicode-legacy HEAD (${legacy_head}) does not match LEGACY_REF (${LEGACY_REF})"
+            status=1
+          fi
+
+          if [ -d "ecosystem/apps/sicode-core" ]; then
+            echo "::error::ecosystem/apps/sicode-core reappeared — CORE must only be consumed from the sibling checkout."
+            status=1
+          fi
+
+          if [ -d "ecosystem/apps/sicode-legacy" ]; then
+            echo "::error::ecosystem/apps/sicode-legacy reappeared — Legacy must only be consumed from the sibling checkout."
+            status=1
+          fi
+
+          exit "${status}"
+
+      - name: Build CORE and Legacy images (external, sibling checkouts)
+        working-directory: ecosystem
         run: docker compose build sicode-core sicode-legacy
 
       - name: Start required services
+        working-directory: ecosystem
         run: |
           docker compose up -d --wait redis sicode-postgres sicode-legacy-sp-mariadb sicode-core sicode-legacy
 
       - name: Confirm Legacy ES and the schema archive are not running
+        working-directory: ecosystem
         run: |
           running="$(docker compose ps --status running --format '{{.Service}}')"
           echo "Running services:"
@@ -86,6 +129,7 @@ jobs:
           fi
 
       - name: Confirm the SP Clean database starts empty
+        working-directory: ecosystem
         run: |
           count="$(docker compose exec -T sicode-legacy-sp-mariadb mariadb -usicode_sp -psp_dev_password -N -B \
             -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='sicode_sp';")"
@@ -96,18 +140,35 @@ jobs:
           fi
 
       - name: Run CORE migrations
+        working-directory: ecosystem
         run: docker compose exec -T sicode-core php artisan migrate --force
 
       - name: Run Legacy SP Clean migrations
+        working-directory: ecosystem
         run: docker compose exec -T sicode-legacy php artisan migrate --force
 
+      - name: Confirm zero users and companies before provisioning
+        working-directory: ecosystem
+        run: |
+          users="$(docker compose exec -T sicode-legacy-sp-mariadb mariadb -usicode_sp -psp_dev_password -N -B \
+            -e "SELECT COUNT(*) FROM sicode_sp.users;")"
+          companies="$(docker compose exec -T sicode-legacy-sp-mariadb mariadb -usicode_sp -psp_dev_password -N -B \
+            -e "SELECT COUNT(*) FROM sicode_sp.companies;")"
+          echo "users=${users} companies=${companies}"
+          if [ "${users}" != "0" ] || [ "${companies}" != "0" ]; then
+            echo "::error::Expected zero users/companies before provisioning (users=${users}, companies=${companies})."
+            exit 1
+          fi
+
       - name: Run SP Clean lifecycle E2E (provisioning, Launch, lifecycle, cleanup, verify-clean)
+        working-directory: ecosystem
         env:
           SICODE_E2E_ALLOWED: "true"
           LEGACY_TEST_DATABASE_ALLOWED: "true"
         run: bash scripts/e2e/legacy-sp-lifecycle.sh
 
       - name: ADS vertical slice (Legacy SP)
+        working-directory: ecosystem
         run: |
           docker compose exec -T \
             -e APP_ENV=testing \
@@ -117,15 +178,20 @@ jobs:
             sicode-legacy php artisan test tests/Feature/AdsDomainUnitRulesTest.php --env=testing
 
       - name: CORE test suite (includes Redis runtime isolation guard)
+        working-directory: ecosystem
         env:
           CORE_TEST_REDIS_ALLOWED: "true"
         run: |
           docker compose exec -T -e APP_ENV=testing -e CORE_TEST_REDIS_ALLOWED=true sicode-core php artisan test --env=testing
 
-      - name: Dump service logs on failure
+      - name: Dump service status and logs on failure
         if: failure()
-        run: docker compose logs --no-color --tail=500
+        working-directory: ecosystem
+        run: |
+          docker compose ps
+          docker compose logs --no-color --tail=300
 
       - name: Cleanup
         if: always()
+        working-directory: ecosystem
         run: docker compose down --remove-orphans
