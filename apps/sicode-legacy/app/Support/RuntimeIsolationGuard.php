@@ -28,6 +28,7 @@ final class RuntimeIsolationGuard
         $unit = $this->currentUnit->value()->value;
 
         $this->assertDatabase($unit);
+        $this->assertNotSnapshotDatabaseWithProvisioning($unit);
         $this->assertRedisPrefix($unit);
         $this->assertSessionCookie($unit);
         $this->assertStoragePrefix($unit);
@@ -49,6 +50,26 @@ final class RuntimeIsolationGuard
         if ($actual !== $expected) {
             throw new RuntimeIsolationViolation(
                 "Runtime isolation guard: unidade '{$unit}' esperava o banco configurado em SICODE_EXPECTED_DATABASE e recebeu um banco divergente."
+            );
+        }
+    }
+
+    private function assertNotSnapshotDatabaseWithProvisioning(string $unit): void
+    {
+        $identityMode = strtolower((string) Config::get('sicode.identity_mode'));
+
+        if ($identityMode !== 'provisioning') {
+            return;
+        }
+
+        $connection = (string) Config::get('database.default');
+        $actual = trim((string) Config::get("database.connections.{$connection}.database"));
+
+        $snapshotDatabase = trim((string) Config::get('sicode.isolation.snapshot_database', 'sicode_legacy'));
+
+        if ($actual === $snapshotDatabase) {
+            throw new RuntimeIsolationViolation(
+                "Runtime isolation guard: unidade '{$unit}' com SICODE_IDENTITY_MODE=provisioning nao pode apontar para o banco snapshot ('{$snapshotDatabase}'). Use o banco SP Clean."
             );
         }
     }

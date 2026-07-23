@@ -67,6 +67,10 @@ return [
 
         'expected_database' => env('SICODE_EXPECTED_DATABASE'),
 
+        // Nome do banco historico (snapshot). Impede que um runtime com
+        // SICODE_IDENTITY_MODE=provisioning suba apontando para esse banco.
+        'snapshot_database' => env('SICODE_SNAPSHOT_DATABASE', 'sicode_legacy'),
+
         'redis_prefix_pattern' => 'sicode:legacy:{unit}:',
         'session_cookie_pattern' => 'sicode_{unit}_session',
         'storage_prefix_pattern' => 'legacy/{unit}',

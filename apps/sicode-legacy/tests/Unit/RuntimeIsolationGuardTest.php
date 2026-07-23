@@ -119,6 +119,21 @@ class RuntimeIsolationGuardTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
+    public function test_guard_rejects_snapshot_database_with_provisioning(): void
+    {
+        $this->configureValidRuntime('sp');
+        config([
+            'sicode.identity_mode' => 'provisioning',
+            'sicode.isolation.expected_database' => 'sicode_legacy',
+            'database.connections.mysql.database' => 'sicode_legacy',
+        ]);
+
+        $this->expectException(RuntimeIsolationViolation::class);
+        $this->expectExceptionMessage('banco snapshot');
+
+        $this->guardFor('sp')->assert();
+    }
+
     private function guardFor(string $unit): RuntimeIsolationGuard
     {
         return new RuntimeIsolationGuard(new CurrentUnit(SicodeUnit::from($unit)));
@@ -126,12 +141,15 @@ class RuntimeIsolationGuardTest extends TestCase
 
     private function configureValidRuntime(string $unit): void
     {
+        $spDatabase = 'sicode_sp';
+        $esDatabase = 'sicode';
+
         config([
             'sicode.isolation.enabled' => true,
             'sicode.identity_mode' => 'reconciliation',
-            'sicode.isolation.expected_database' => $unit === 'sp' ? 'sicode_legacy' : 'sicode',
+            'sicode.isolation.expected_database' => $unit === 'sp' ? $spDatabase : $esDatabase,
             'database.default' => 'mysql',
-            'database.connections.mysql.database' => $unit === 'sp' ? 'sicode_legacy' : 'sicode',
+            'database.connections.mysql.database' => $unit === 'sp' ? $spDatabase : $esDatabase,
             'database.redis.cache.options.prefix' => "sicode:legacy:{$unit}:cache:",
             'session.cookie' => "sicode_{$unit}_session",
             'sicode.storage.prefix' => "legacy/{$unit}",

@@ -60,6 +60,12 @@ services:
       timeout: 5s
       retries: 12
 
+  # ──────────────────────────────────────────────────────────────────────────
+  # SICODE Legacy SP — instância canônica de São Paulo
+  # Banco: sicode_sp (sicode-legacy-sp-mariadb)
+  # SICODE_IDENTITY_MODE: provisioning
+  # Redis DBs: 4-7  |  Cookie: sicode_sp_session
+  # ──────────────────────────────────────────────────────────────────────────
   sicode-legacy:
     build:
       context: .
@@ -67,8 +73,8 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./apps/sicode-legacy:/var/www/html
-      - sicode-legacy-sp-storage-app:/var/www/html/storage/app
-      - sicode-legacy-sp-storage-logs:/var/www/html/storage/logs
+      - sicode-legacy-sp-clean-storage-app:/var/www/html/storage/app
+      - sicode-legacy-sp-clean-storage-logs:/var/www/html/storage/logs
     env_file:
       - ./apps/sicode-legacy/.env.example
     environment:
@@ -78,22 +84,22 @@ services:
       SESSION_COOKIE: sicode_sp_session
       CACHE_PREFIX: ""
       DB_CONNECTION: mysql
-      DB_HOST: sicode-legacy-mariadb
+      DB_HOST: sicode-legacy-sp-mariadb
       DB_PORT: 3306
-      DB_DATABASE: sicode_legacy
-      DB_USERNAME: sicode_legacy
-      DB_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
-      DB_LOG_HOST: sicode-legacy-mariadb
+      DB_DATABASE: sicode_sp
+      DB_USERNAME: sicode_sp
+      DB_PASSWORD: ${LOCAL_LEGACY_SP_DATABASE_PASSWORD:-sp_dev_password}
+      DB_LOG_HOST: sicode-legacy-sp-mariadb
       DB_LOG_PORT: 3306
-      DB_LOG_DATABASE: sicode_legacy
-      DB_LOG_USERNAME: sicode_legacy
-      DB_LOG_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
+      DB_LOG_DATABASE: sicode_sp
+      DB_LOG_USERNAME: sicode_sp
+      DB_LOG_PASSWORD: ${LOCAL_LEGACY_SP_DATABASE_PASSWORD:-sp_dev_password}
       SICODE_UNIT: ${SICODE_LEGACY_UNIT:-sp}
       SICODE_IDENTITY_MODE: ${SICODE_LEGACY_IDENTITY_MODE:-provisioning}
       SICODE_INSTANCE_CODE: ${SICODE_LEGACY_INSTANCE_CODE:-sicode-legacy-sp-local}
       SICODE_INSTANCE_NAME: ${SICODE_LEGACY_INSTANCE_NAME:-SICODE Legacy SP Local}
       SICODE_STORAGE_PREFIX: ${SICODE_LEGACY_STORAGE_PREFIX:-legacy/sp}
-      SICODE_EXPECTED_DATABASE: sicode_legacy
+      SICODE_EXPECTED_DATABASE: sicode_sp
       SICODE_ISOLATION_GUARD_ENABLED: "true"
       CACHE_DRIVER: redis
       SESSION_DRIVER: redis
@@ -112,8 +118,10 @@ services:
       CORE_LAUNCH_CLIENT_SECRET: ${SICODE_LEGACY_CORE_CLIENT_SECRET:-local_legacy_core_secret}
       CORE_LAUNCH_REDIRECT_URI: ${SICODE_LEGACY_CORE_REDIRECT_URI:-http://localhost:8083/core/launch/callback}
       CORE_LAUNCH_CONTEXT: ${SICODE_LEGACY_CORE_CONTEXT:-SP}
+      LEGACY_TEST_DATABASE_NAME: sicode_sp
+      LEGACY_TEST_DATABASE_HOSTS: sicode-legacy-sp-mariadb,127.0.0.1,localhost
     depends_on:
-      sicode-legacy-mariadb:
+      sicode-legacy-sp-mariadb:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -125,6 +133,12 @@ services:
       timeout: 5s
       retries: 12
 
+  # ──────────────────────────────────────────────────────────────────────────
+  # SICODE Legacy ES — instância Espírito Santo
+  # Banco: sicode (tools_mariadb, rede database_default)
+  # SICODE_IDENTITY_MODE: reconciliation
+  # Redis DBs: 0-3  |  Cookie: sicode_es_session
+  # ──────────────────────────────────────────────────────────────────────────
   sicode-legacy-es:
     build:
       context: .
@@ -192,7 +206,109 @@ services:
       timeout: 5s
       retries: 12
 
-  sicode-legacy-mariadb:
+  # ──────────────────────────────────────────────────────────────────────────
+  # SICODE Legacy Snapshot — banco histórico para regressão
+  # Banco: sicode_legacy (sicode-legacy-snapshot-mariadb)
+  # SICODE_IDENTITY_MODE: reconciliation  (provisioning DESABILITADO)
+  # SICODE_ISOLATION_GUARD_ENABLED: false (não é runtime canônico)
+  # Redis DBs: 8-11  |  Cookie: sicode_snapshot_session
+  # Profile: snapshot  — não sobe com "docker compose up" padrão
+  # ──────────────────────────────────────────────────────────────────────────
+  sicode-legacy-snapshot:
+    build:
+      context: .
+      dockerfile: infra/docker/legacy/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./apps/sicode-legacy:/var/www/html
+      - sicode-legacy-sp-storage-app:/var/www/html/storage/app
+      - sicode-legacy-sp-storage-logs:/var/www/html/storage/logs
+    env_file:
+      - ./apps/sicode-legacy/.env.example
+    environment:
+      APP_ENV: local
+      APP_KEY: ${SICODE_LEGACY_APP_KEY:-base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=}
+      APP_URL: ${SICODE_LEGACY_SNAPSHOT_APP_URL:-http://localhost:8085}
+      APP_NAME: "SICODE Legacy Snapshot"
+      SESSION_COOKIE: sicode_snapshot_session
+      CACHE_PREFIX: ""
+      DB_CONNECTION: mysql
+      DB_HOST: sicode-legacy-snapshot-mariadb
+      DB_PORT: 3306
+      DB_DATABASE: sicode_legacy
+      DB_USERNAME: sicode_legacy
+      DB_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
+      DB_LOG_HOST: sicode-legacy-snapshot-mariadb
+      DB_LOG_PORT: 3306
+      DB_LOG_DATABASE: sicode_legacy
+      DB_LOG_USERNAME: sicode_legacy
+      DB_LOG_PASSWORD: ${LOCAL_LEGACY_DATABASE_PASSWORD:-legacy_dev_password}
+      SICODE_UNIT: sp
+      SICODE_IDENTITY_MODE: reconciliation
+      SICODE_INSTANCE_CODE: sicode-legacy-snapshot-local
+      SICODE_INSTANCE_NAME: "SICODE Legacy Snapshot Local"
+      SICODE_STORAGE_PREFIX: legacy/snapshot
+      SICODE_EXPECTED_DATABASE: sicode_legacy
+      SICODE_ISOLATION_GUARD_ENABLED: "false"
+      CACHE_DRIVER: redis
+      SESSION_DRIVER: redis
+      SESSION_STORE: redis_session
+      SESSION_CONNECTION: session
+      QUEUE_CONNECTION: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PREFIX: "sicode:legacy:snapshot:"
+      REDIS_DB: 8
+      REDIS_CACHE_DB: 9
+      REDIS_SESSION_DB: 10
+      REDIS_QUEUE_DB: 11
+      CORE_LAUNCH_EXCHANGE_URL: http://sicode-core:8000/api/core/launch/exchange
+      CORE_LAUNCH_CLIENT_IDENTIFIER: ${SICODE_LEGACY_SNAPSHOT_CORE_CLIENT_IDENTIFIER:-sicode-legacy-snapshot-local}
+      CORE_LAUNCH_CLIENT_SECRET: ${SICODE_LEGACY_SNAPSHOT_CORE_CLIENT_SECRET:-local_legacy_snapshot_secret}
+      CORE_LAUNCH_REDIRECT_URI: ${SICODE_LEGACY_SNAPSHOT_CORE_REDIRECT_URI:-http://localhost:8085/core/launch/callback}
+      CORE_LAUNCH_CONTEXT: SP
+    depends_on:
+      sicode-legacy-snapshot-mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${SICODE_LEGACY_SNAPSHOT_HTTP_PORT:-8085}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1:8000/') === false ? 1 : 0);\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    profiles:
+      - snapshot
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # MariaDB SP Clean — banco oficial da instância SP
+  # Database: sicode_sp  |  Volume: sicode-legacy-sp-clean-data (novo, vazio)
+  # ──────────────────────────────────────────────────────────────────────────
+  sicode-legacy-sp-mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: ${LOCAL_LEGACY_SP_ROOT_PASSWORD:-sp_root_password}
+      MARIADB_DATABASE: sicode_sp
+      MARIADB_USER: sicode_sp
+      MARIADB_PASSWORD: ${LOCAL_LEGACY_SP_DATABASE_PASSWORD:-sp_dev_password}
+    volumes:
+      - sicode-legacy-sp-clean-data:/var/lib/mysql
+    ports:
+      - "${SICODE_LEGACY_SP_MARIADB_PORT:-3312}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # MariaDB Snapshot — banco de regressão (dados históricos preservados)
+  # Database: sicode_legacy  |  Volume: sicode-legacy-mariadb-data (existente)
+  # Profile: snapshot  — não sobe com "docker compose up" padrão
+  # ──────────────────────────────────────────────────────────────────────────
+  sicode-legacy-snapshot-mariadb:
     image: mariadb:11
     environment:
       MARIADB_ROOT_PASSWORD: ${LOCAL_LEGACY_ROOT_PASSWORD:-legacy_root_password}
@@ -202,12 +318,14 @@ services:
     volumes:
       - sicode-legacy-mariadb-data:/var/lib/mysql
     ports:
-      - "${SICODE_LEGACY_MARIADB_PORT:-3311}:3306"
+      - "${SICODE_LEGACY_SNAPSHOT_MARIADB_PORT:-3313}:3306"
     healthcheck:
       test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 20
+    profiles:
+      - snapshot
 
   sicode-postgres:
     image: postgres:17-alpine
@@ -259,10 +377,16 @@ services:
 
 volumes:
   sicode-postgres-data:
-  sicode-legacy-mariadb-data:
   sicode-redis-data:
+  # SP Clean — banco oficial SP (novo, vazio antes das migrations)
+  sicode-legacy-sp-clean-data:
+  sicode-legacy-sp-clean-storage-app:
+  sicode-legacy-sp-clean-storage-logs:
+  # Snapshot — banco histórico de regressão (preservado, não apagar)
+  sicode-legacy-mariadb-data:
   sicode-legacy-sp-storage-app:
   sicode-legacy-sp-storage-logs:
+  # ES
   sicode-legacy-es-storage-app:
   sicode-legacy-es-storage-logs:
 

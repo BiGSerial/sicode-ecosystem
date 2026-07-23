@@ -184,9 +184,17 @@ class ProductionCompanyContextTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        $serviceUuid = (string) Str::uuid();
+        DB::table('services')->insertGetId([
+            'uuid' => $serviceUuid,
+            'service' => 'TEST_CONTRACT_SERVICE',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
         DB::table('employees')->insert([
             'contract_id' => $contractId,
             'user_id' => $user->id,
+            'service_id' => $serviceUuid,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

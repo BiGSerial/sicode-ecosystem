@@ -1,7 +1,7 @@
 COMPOSE ?= docker compose
 CADDY_HTTP_PORT ?= 8090
 
-.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-sp-e2e legacy-sp-e2e-clean legacy-sp-e2e-verify legacy-migrate legacy-es-up legacy-es-down legacy-es-logs legacy-es-shell legacy-es-smoke legacy-es-db-inspect legacy-es-schema-diff legacy-runtime-up legacy-runtime-down legacy-redis-inspect legacy-runtime-isolation-test legacy-runtime-clear-ephemeral legacy-runtime-smoke
+.PHONY: up down build logs health core-shell core-analyse core-quality core-test core-test-pgsql core-migrate sicodesk-shell sicodesk-test sicodesk-migrate legacy-shell legacy-test legacy-test-es legacy-test-sp legacy-test-matrix legacy-sp-e2e legacy-sp-e2e-clean legacy-sp-e2e-verify legacy-migrate legacy-es-up legacy-es-down legacy-es-logs legacy-es-shell legacy-es-smoke legacy-es-db-inspect legacy-es-schema-diff legacy-runtime-up legacy-runtime-down legacy-redis-inspect legacy-runtime-isolation-test legacy-runtime-clear-ephemeral legacy-runtime-smoke legacy-sp-clean-up legacy-sp-clean-down legacy-sp-clean-migrate legacy-sp-clean-smoke legacy-sp-clean-e2e legacy-snapshot-up legacy-snapshot-down legacy-snapshot-inspect
 
 up:
 	$(COMPOSE) up -d
@@ -120,6 +120,11 @@ legacy-redis-inspect:
 	$(COMPOSE) exec redis redis-cli -n 5 --scan --pattern 'sicode:legacy:sp:cache:*'
 	$(COMPOSE) exec redis redis-cli -n 6 --scan --pattern 'sicode:legacy:sp:session:*'
 	$(COMPOSE) exec redis redis-cli -n 7 --scan --pattern 'sicode:legacy:sp:queue:*'
+	@echo "--- Snapshot (sicode:legacy:snapshot:, DBs 8-11) ---"
+	$(COMPOSE) --profile snapshot exec redis redis-cli -n 8 dbsize
+	$(COMPOSE) --profile snapshot exec redis redis-cli -n 9 --scan --pattern 'sicode:legacy:snapshot:cache:*'
+	$(COMPOSE) --profile snapshot exec redis redis-cli -n 10 --scan --pattern 'sicode:legacy:snapshot:session:*'
+	$(COMPOSE) --profile snapshot exec redis redis-cli -n 11 --scan --pattern 'sicode:legacy:snapshot:queue:*'
 
 legacy-runtime-isolation-test:
 	$(COMPOSE) exec -e APP_ENV=testing sicode-legacy-es php artisan test tests/Unit/RuntimeIsolationGuardTest.php --env=testing
@@ -146,3 +151,60 @@ legacy-runtime-smoke:
 	$(COMPOSE) exec sicode-legacy php artisan tinker --execute="echo 'SP cache driver: '.config('cache.default').PHP_EOL; echo 'SP redis prefix: '.config('database.redis.cache.options.prefix').PHP_EOL;"
 	curl -fsS http://localhost:$${SICODE_LEGACY_ES_HTTP_PORT:-8084}/ > /dev/null && echo "ES http OK"
 	curl -fsS http://localhost:$${SICODE_LEGACY_HTTP_PORT:-8083}/ > /dev/null && echo "SP http OK"
+
+# ──────────────────────────────────────────────────────────────────────────
+# SP Clean — instância canônica São Paulo (sicode_sp)
+# ──────────────────────────────────────────────────────────────────────────
+
+legacy-sp-clean-up:
+	$(COMPOSE) up -d sicode-legacy-sp-mariadb
+	$(COMPOSE) up -d sicode-legacy
+
+legacy-sp-clean-down:
+	$(COMPOSE) stop sicode-legacy sicode-legacy-sp-mariadb
+
+# Exige confirmacao explicita para evitar migrate acidental
+legacy-sp-clean-migrate:
+	@echo ""
+	@echo "AVISO: Este alvo executa php artisan migrate no banco sicode_sp (SP Clean)."
+	@echo "       Certifique-se de que o banco esta no estado correto antes de prosseguir."
+	@echo ""
+	@read -p "Digite 'sim' para continuar: " CONFIRM && [ "$$CONFIRM" = "sim" ] || (echo "Cancelado."; exit 1)
+	$(COMPOSE) exec sicode-legacy php artisan migrate --force
+
+legacy-sp-clean-smoke:
+	$(COMPOSE) exec sicode-legacy php artisan tinker --execute="\
+		echo 'Unit: '.app(\App\Support\CurrentUnit::class)->value()->value.PHP_EOL;\
+		echo 'IdentityMode: '.app(\App\Support\IdentityMode::class)->value.PHP_EOL;\
+		echo 'Database: '.config('database.connections.mysql.database').PHP_EOL;\
+		echo 'Users: '.\App\Models\User::count().PHP_EOL;\
+		echo 'Companies: '.\App\Models\Company::count().PHP_EOL;\
+		echo 'IdentityLinks: '.\App\Models\CoreIdentityLink::count().PHP_EOL;\
+		echo 'OrgLinks: '.\App\Models\CoreOrganizationLink::count().PHP_EOL;\
+		echo 'Guard: '.config('sicode.isolation.expected_database').PHP_EOL;\
+		"
+
+legacy-sp-clean-e2e:
+	bash scripts/e2e/legacy-sp-lifecycle.sh
+
+# ──────────────────────────────────────────────────────────────────────────
+# Snapshot — banco historico de regressao (sicode_legacy, perfil snapshot)
+# Nenhum destes alvos apaga o volume snapshot.
+# ──────────────────────────────────────────────────────────────────────────
+
+legacy-snapshot-up:
+	$(COMPOSE) --profile snapshot up -d sicode-legacy-snapshot-mariadb
+	$(COMPOSE) --profile snapshot up -d sicode-legacy-snapshot
+
+legacy-snapshot-down:
+	$(COMPOSE) --profile snapshot stop sicode-legacy-snapshot sicode-legacy-snapshot-mariadb
+
+legacy-snapshot-inspect:
+	docker exec ecosystem-sicode-legacy-snapshot-mariadb-1 mariadb \
+		-usicode_legacy -plegacy_dev_password sicode_legacy \
+		-e "SELECT \
+			(SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sicode_legacy') AS tables, \
+			(SELECT COUNT(*) FROM migrations) AS migrations, \
+			(SELECT COUNT(*) FROM users) AS users, \
+			(SELECT COUNT(*) FROM companies) AS companies, \
+			(SELECT ROUND(SUM(data_length+index_length)/1024/1024,2) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sicode_legacy') AS total_mb;"

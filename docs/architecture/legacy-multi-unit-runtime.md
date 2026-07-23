@@ -1,8 +1,20 @@
 # Runtime multiunidade do SICODE Legacy
 
-Data: 2026-07-20
+Data: 2026-07-20 (atualizado 2026-07-23)
 
-Este documento define a fundacao local para executar uma unica base de codigo do SICODE Legacy em instancias independentes ES e SP.
+Este documento define a fundacao local para executar uma unica base de codigo do SICODE Legacy em tres contextos isolados: ES, SP Clean e Snapshot.
+
+## Tres contextos (atualizado 2026-07-23)
+
+| Contexto | Service | DB | Volume | Propósito |
+| --- | --- | --- | --- | --- |
+| Legacy ES | `sicode-legacy-es` | `sicode` (tools_mariadb) | externo | Dados históricos reais ES |
+| Legacy SP Clean | `sicode-legacy` | `sicode_sp` | `sp-clean-data` | Desenvolvimento SP canônico |
+| Legacy Snapshot | `sicode-legacy-snapshot` | `sicode_legacy` | `mariadb-data` | Regressão/compatibilidade |
+
+O Snapshot não recebe Launch oficial, não executa provisioning e não representa o SP canônico. Ver `docs/deployment/legacy-sp-clean-instance.md` e `docs/deployment/legacy-snapshot-instance.md`.
+
+
 
 ## Decisao operacional
 

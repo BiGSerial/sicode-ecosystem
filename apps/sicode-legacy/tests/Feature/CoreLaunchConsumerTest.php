@@ -338,9 +338,18 @@ class CoreLaunchConsumerTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        $serviceUuid = (string) \Illuminate\Support\Str::uuid();
+        DB::table('services')->insertGetId([
+            'uuid' => $serviceUuid,
+            'service' => 'TEST_CORE_LAUNCH_Service',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         DB::table('employees')->insert([
             'contract_id' => $contractId,
             'user_id' => $user->id,
+            'service_id' => $serviceUuid,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
